@@ -31,14 +31,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: _pages[_index],
       backgroundColor: Colors.grey[900],
-      appBar: AppBar(
-        backgroundColor: Colors.grey[900],
-        title: Text(
-          "App Đọc Truyện Số Một Việt Nam",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-      ),
       bottomNavigationBar: BottomNavigationBar(
         onTap: (index) {
           setState(() {
