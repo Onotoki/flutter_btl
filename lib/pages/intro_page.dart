@@ -7,9 +7,9 @@ class IntroPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green[900],
+      backgroundColor: Colors.grey[850],
       appBar: AppBar(
-        backgroundColor: Colors.green[900],
+        backgroundColor: Colors.grey[850],
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
