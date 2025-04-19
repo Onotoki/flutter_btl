@@ -6,10 +6,9 @@ class BookTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.only(top: 10, left: 15),
       child: Container(
-        width: 150,
-        margin: EdgeInsets.only(left: 20, bottom: 400),
+        width: 120,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
