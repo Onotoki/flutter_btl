@@ -1,20 +1,49 @@
 import 'package:btl/pages/home_page.dart';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 
 class IntroPage extends StatelessWidget {
   const IntroPage({super.key});
+  Future<void> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
 
-  void handleGoogleLogin(BuildContext context) {
-    print("Đăng nhập với Google");
-    // TODO: Thêm chức năng thật ở đây (Firebase, GoogleSignIn, v.v.)
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      print("Đăng nhập Google thành công!");
+    } catch (e) {
+      print("Lỗi đăng nhập Google: $e");
+    }
   }
 
-  void handleFacebookLogin(BuildContext context) {
-    print("Đăng nhập với Facebook");
-    // TODO: Thêm chức năng thật ở đây (Facebook SDK hoặc Firebase auth Facebook)
+  Future<void> signInWithFacebook() async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.success) {
+        final OAuthCredential facebookAuthCredential =
+            FacebookAuthProvider.credential(result.accessToken!.token);
+
+        await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+        print("Đăng nhập Facebook thành công!");
+      } else {
+        print("Lỗi Facebook: ${result.message}");
+      }
+    } catch (e) {
+      print("Lỗi đăng nhập Facebook: $e");
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +87,7 @@ class IntroPage extends StatelessWidget {
             const SizedBox(height: 30),
             // Google button
             GestureDetector(
-              onTap: () => handleGoogleLogin(context),
+              onTap: () => signInWithGoogle(),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -82,7 +111,7 @@ class IntroPage extends StatelessWidget {
             const SizedBox(height: 15),
             // Facebook button
             GestureDetector(
-              onTap: () => handleFacebookLogin(context),
+              onTap: () => signInWithFacebook(),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
