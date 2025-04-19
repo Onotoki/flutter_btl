@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "140625758080",
+    "project_id": "btlflutter-171e6",
+    "storage_bucket": "btlflutter-171e6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:140625758080:android:8c9d05a5d5c003f5e2e365",
+        "android_client_info": {
+          "package_name": "com.example.btl"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNyIp2ob9KiRSj_vhEVv2TogroJ_t20T8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
