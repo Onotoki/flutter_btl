@@ -1,8 +1,8 @@
-import 'package:btl/pages/canhan_page.dart';
-import 'package:btl/pages/congdong_page.dart';
-import 'package:btl/pages/kesach_page.dart';
-import 'package:btl/pages/khampha_page.dart';
 import 'package:flutter/material.dart';
+
+import 'book_page.dart';
+import 'library_page.dart';
+import 'more_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,17 +16,14 @@ class _HomePageState extends State<HomePage> {
 
   //Danh sách trang
   List<Widget> _pages = [
-    //Kệ sách
-    KeSachPage(),
+    //Home
+    BookPage(),
 
-    //Khám phá
-    KhamPhaPage(),
+    //Library
+    LibraryPage(),
 
-    //Cộng đồng
-    CongDongPage(),
-
-    //Cá nhân
-    CaNhanPage(),
+    //More
+    MorePage(),
   ];
 
   @override
@@ -53,11 +50,10 @@ class _HomePageState extends State<HomePage> {
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
-            label: "Kệ Sách",
+            label: "Home",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Khám phá"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Cộng đồng"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Cá nhân"),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: "Library"),
+          BottomNavigationBarItem(icon: Icon(Icons.menu), label: "More"),
         ],
       ),
     );
