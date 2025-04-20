@@ -9,15 +9,16 @@ class BackToIntroPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) {
-              return IntroPage();
+              return IntroPage(); // Navigates to IntroPage
             },
           ),
+          (route) => false, // Removes all previous routes from the stack
         );
       },
+
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
