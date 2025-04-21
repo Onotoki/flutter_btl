@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../pages/intro_page.dart';
+import '../pages/Intropage/intro_page.dart';
 
 class BackToIntroPage extends StatelessWidget {
   const BackToIntroPage({super.key});
