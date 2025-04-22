@@ -32,150 +32,146 @@ class IntroPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFF003E32),
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          automaticallyImplyLeading: false,
-          elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.close, size: 30, color: Colors.white),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                ); // quay lại hoặc thoát
-              },
+      backgroundColor: const Color(0xFF003E32),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close, size: 30, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HomePage()),
+              ); // quay lại hoặc thoát
+            },
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 25.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Spacer(),
+            const Icon(Icons.grid_view, size: 60, color: Colors.greenAccent),
+            const SizedBox(height: 20),
+            const Text(
+              "Sign in to Apptruyen",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-              const Icon(Icons.grid_view, size: 60, color: Colors.greenAccent),
-              const SizedBox(height: 20),
-              const Text(
-                "Sign in to Apptruyen",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+            const SizedBox(height: 10),
+            const Text(
+              "Create an account or log in to save your reading progress.",
+              style: TextStyle(fontSize: 16, color: Colors.white70),
+            ),
+            const SizedBox(height: 30),
+            // Google button
+            GestureDetector(
+              onTap: () => signInWithGoogle(),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
                   color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.g_mobiledata, size: 30),
+                    SizedBox(width: 10),
+                    Text(
+                      "Continue with Google",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                "Create an account or log in to save your reading progress.",
-                style: TextStyle(fontSize: 16, color: Colors.white70),
-              ),
-              const SizedBox(height: 30),
-              // Google button
-              GestureDetector(
-                onTap: () => signInWithGoogle(),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.g_mobiledata, size: 30),
-                      SizedBox(width: 10),
-                      Text(
-                        "Continue with Google",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
+            ),
+            //Email button
+            const SizedBox(height: 30),
+            GestureDetector(
+              onTap:
+                  () => (Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  )),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.email, size: 30),
+                    SizedBox(width: 10),
+                    Text("Continue with Email", style: TextStyle(fontSize: 16)),
+                  ],
                 ),
               ),
-              //Email button
-              const SizedBox(height: 30),
-              GestureDetector(
-                onTap:
-                    () => (Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
-                    )),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.email, size: 30),
-                      SizedBox(width: 10),
-                      Text("Continue with Email", style: TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                ),
-              ),
-              
-              
-              const SizedBox(height: 15),
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    text: "Don't have an account?  ",
-                    style: const TextStyle(color: Colors.white70, fontSize: 23),
-                    children: [
-                      TextSpan(
-                        text: "Sign up",
-                        style: const TextStyle(
-                          color: Colors.greenAccent,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
+            ),
+
+            const SizedBox(height: 15),
+            Center(
+              child: Text.rich(
+                TextSpan(
+                  text: "Don't have an account?  ",
+                  style: const TextStyle(color: Colors.white70, fontSize: 23),
+                  children: [
+                    TextSpan(
+                      text: "Sign up",
+                      style: const TextStyle(color: Colors.greenAccent),
+                      recognizer:
+                          TapGestureRecognizer()
+                            ..onTap = () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => RegisterPage()),
+                                MaterialPageRoute(
+                                  builder: (context) => RegisterPage(),
+                                ),
                               );
-                        },
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
+                            },
+                    ),
+                  ],
                 ),
+                textAlign: TextAlign.center,
               ),
+            ),
 
-              const Spacer(),
-              Center(
-                child: Text.rich(
-                  TextSpan(
-                    text: "By continuing, you agree to our ",
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    children: [
-                      TextSpan(
-                        text: "Terms of Service",
-                        style: const TextStyle(
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const TextSpan(text: " / "),
-                      TextSpan(
-                        text: "Privacy Policy",
-                        style: const TextStyle(
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
+            const Spacer(),
+            Center(
+              child: Text.rich(
+                TextSpan(
+                  text: "By continuing, you agree to our ",
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  children: [
+                    TextSpan(
+                      text: "Terms of Service",
+                      style: const TextStyle(color: Colors.blue),
+                    ),
+                    const TextSpan(text: " / "),
+                    TextSpan(
+                      text: "Privacy Policy",
+                      style: const TextStyle(color: Colors.blue),
+                    ),
+                  ],
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 15),
-            ],
-          ),
+            ),
+            const SizedBox(height: 15),
+          ],
         ),
+      ),
     );
   }
 }
