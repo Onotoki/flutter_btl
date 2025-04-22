@@ -1,5 +1,6 @@
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/Intropage/login_page.dart';
+import 'package:btl/pages/Intropage/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -14,6 +15,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginPage());
+    return MaterialApp(debugShowCheckedModeBanner: false, home: RegisterPage());
   }
 }
