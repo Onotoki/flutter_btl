@@ -4,14 +4,15 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
 import 'login_page.dart';
 
 class IntroPage extends StatelessWidget {
   const IntroPage({super.key});
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithGoogle(BuildContext context) async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
       if (googleUser == null) return;
 
       final GoogleSignInAuthentication googleAuth =
@@ -23,7 +24,12 @@ class IntroPage extends StatelessWidget {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
+
       print("Đăng nhập Google thành công!");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
     } catch (e) {
       print("Lỗi đăng nhập Google: $e");
     }
@@ -73,7 +79,7 @@ class IntroPage extends StatelessWidget {
             const SizedBox(height: 30),
             // Google button
             GestureDetector(
-              onTap: () => signInWithGoogle(),
+              onTap: () => signInWithGoogle(context),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -83,8 +89,8 @@ class IntroPage extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.g_mobiledata, size: 30),
+                  children: [
+                    Image.asset('assets/image/Google__G__logo.png',height: 30,width: 30,),
                     SizedBox(width: 10),
                     Text(
                       "Continue with Google",
