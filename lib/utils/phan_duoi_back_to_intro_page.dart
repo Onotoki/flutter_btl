@@ -10,7 +10,7 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
         //Logo
         Padding(
           padding: const EdgeInsets.only(left: 20),
-          child: Image.asset("lib/images/logo.webp", width: 40),
+          child: const Icon(Icons.grid_view, size: 40, color: Colors.greenAccent),
         ),
 
         //Books
