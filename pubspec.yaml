@@ -30,12 +30,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^2.27.0
+  firebase_core: ^2.24.2
   firebase_auth: ^4.16.0
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.1.1
   flutter_launcher_icons: ^0.13.1
   flutter_staggered_animations: ^1.1.1
+  flutterfire_cli: ^1.2.0
 flutter_icons:
   android: true
   ios: true
@@ -70,6 +71,8 @@ flutter:
   assets:
     - lib/images/
     - lib/images/rate_icons/
+    - assets/image/
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

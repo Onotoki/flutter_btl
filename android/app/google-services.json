@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "140625758080",
-    "project_id": "btlflutter-171e6",
-    "storage_bucket": "btlflutter-171e6.firebasestorage.app"
+    "project_number": "310105776687",
+    "project_id": "apptruyen1-a1780",
+    "storage_bucket": "apptruyen1-a1780.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:140625758080:android:8c9d05a5d5c003f5e2e365",
+        "mobilesdk_app_id": "1:310105776687:android:0e77bb8fd58534c1ef1cda",
         "android_client_info": {
-          "package_name": "com.example.btl"
+          "package_name": "com.example.apptruyen1"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "310105776687-lk08k5v3f1vfh9vef3cgq8vt591kjmti.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.apptruyen1",
+            "certificate_hash": "6fff3805a57346f688a09ccaa81f7726ec8b6ad9"
+          }
+        },
+        {
+          "client_id": "310105776687-8msjpk2cu026lfnvk2dkpclm87falvg8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCNyIp2ob9KiRSj_vhEVv2TogroJ_t20T8"
+          "current_key": "AIzaSyAff_sVPifXCeo9HtGPKwCzmkKx1uwWpSQ"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "310105776687-8msjpk2cu026lfnvk2dkpclm87falvg8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
