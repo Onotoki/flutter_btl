@@ -43,7 +43,9 @@ class BookPage extends StatelessWidget {
               itemCount: 4,
               itemBuilder: (context, index) {
                 Book book = Book(imagePath: "lib/images/book.jpg");
-                return BookTile();
+                return BookTile(
+                  linkImage: book.imagePath,
+                );
               },
             ),
           ),
@@ -70,7 +72,10 @@ class BookPage extends StatelessWidget {
               itemCount: 4,
               itemBuilder: (context, index) {
                 Book book = Book(imagePath: "lib/images/book.jpg");
-                return BookTile();
+                // return BookTile();
+                return BookTile(
+                  linkImage: book.imagePath,
+                );
               },
             ),
           ),
@@ -97,7 +102,10 @@ class BookPage extends StatelessWidget {
               itemCount: 4,
               itemBuilder: (context, index) {
                 Book book = Book(imagePath: "lib/images/book.jpg");
-                return BookTile();
+                // return BookTile();
+                return BookTile(
+                  linkImage: book.imagePath,
+                );
               },
             ),
           ),
@@ -124,7 +132,10 @@ class BookPage extends StatelessWidget {
               itemCount: 4,
               itemBuilder: (context, index) {
                 Book book = Book(imagePath: "lib/images/book.jpg");
-                return BookTile();
+                // return BookTile();
+                return BookTile(
+                  linkImage: book.imagePath,
+                );
               },
             ),
           ),
