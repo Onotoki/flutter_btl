@@ -19,8 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.light),
-      home: RegisterPage(),
+      home: IntroPage(),
       routes: {
         '/infopage': (context) => Info(),
       },
