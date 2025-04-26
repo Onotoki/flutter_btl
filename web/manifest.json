@@ -1,6 +1,6 @@
 {
-    "name": "btl",
-    "short_name": "btl",
+    "name": "test_epub",
+    "short_name": "test_epub",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
