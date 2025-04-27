@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../pages/search_page.dart';
 
 class PhanDuoiBackToIntroPage extends StatelessWidget {
   const PhanDuoiBackToIntroPage({super.key});
@@ -7,33 +8,40 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        //Logo
+        // Logo
         Padding(
           padding: const EdgeInsets.only(left: 20),
-          child: const Icon(
-            Icons.grid_view,
-            size: 40,
-            color: Colors.green,
-          ),
+          child:
+              const Icon(Icons.grid_view, size: 40, color: Colors.greenAccent),
         ),
 
-        //Books
+        // Books
         Padding(
           padding: const EdgeInsets.only(left: 10),
           child: Text(
             "Books",
             style: TextStyle(
-              // color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 23,
             ),
           ),
         ),
         Spacer(),
-        //Search Icon
+
+        // Search Icon with GestureDetector
         Padding(
           padding: const EdgeInsets.only(right: 15),
-          child: Icon(Icons.search, size: 35),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchPage(),
+                ),
+              );
+            },
+            child: Icon(Icons.search, size: 35),
+          ),
         ),
       ],
     );
