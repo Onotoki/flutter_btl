@@ -10,7 +10,11 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
         //Logo
         Padding(
           padding: const EdgeInsets.only(left: 20),
-          child: const Icon(Icons.grid_view, size: 40, color: Colors.greenAccent),
+          child: const Icon(
+            Icons.grid_view,
+            size: 40,
+            color: Colors.green,
+          ),
         ),
 
         //Books
@@ -19,7 +23,7 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
           child: Text(
             "Books",
             style: TextStyle(
-              color: Colors.white,
+              // color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 23,
             ),
@@ -29,7 +33,7 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
         //Search Icon
         Padding(
           padding: const EdgeInsets.only(right: 15),
-          child: Icon(Icons.search, color: Colors.white, size: 35),
+          child: Icon(Icons.search, size: 35),
         ),
       ],
     );

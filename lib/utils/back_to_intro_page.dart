@@ -18,7 +18,6 @@ class BackToIntroPage extends StatelessWidget {
           (route) => false, // Removes all previous routes from the stack
         );
       },
-
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(

@@ -28,7 +28,7 @@ class BookPage extends StatelessWidget {
                 Text(
                   "Happy Endings >",
                   style: TextStyle(
-                    color: Colors.white,
+                    // color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -57,7 +57,7 @@ class BookPage extends StatelessWidget {
                 Text(
                   "Top in Contemporary > ",
                   style: TextStyle(
-                    color: Colors.white,
+                    // color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -87,7 +87,7 @@ class BookPage extends StatelessWidget {
                 Text(
                   "Enimies to Lovers >",
                   style: TextStyle(
-                    color: Colors.white,
+                    // color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -117,7 +117,7 @@ class BookPage extends StatelessWidget {
                 Text(
                   "Love Stories >",
                   style: TextStyle(
-                    color: Colors.white,
+                    // color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),

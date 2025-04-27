@@ -65,15 +65,16 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                           TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                     ),
                     Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(4)),
-                      child: Text('Phiêu Lưu',
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(4)),
+                        child: Text(
+                          'Phiêu Lưu',
                           style: TextStyle(
                             fontSize: 11,
-                          )),
-                    )
+                          ),
+                        ))
                   ],
                 ),
 
@@ -126,7 +127,8 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                             },
                             child: Text(
                               'Chi tiết',
-                              style: TextStyle(fontSize: 14),
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.green),
                             )))
                   ],
                 ),
