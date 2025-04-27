@@ -6,7 +6,6 @@ ThemeData lightTheme = ThemeData(
     surface: Colors.white,
     onSurface: Colors.grey.shade700,
     primary: Colors.grey.shade300,
-    secondary: Colors.grey.shade300,
-    // onSecondary: Colors.green,
+    secondary: Colors.grey.shade100,
   ),
 );

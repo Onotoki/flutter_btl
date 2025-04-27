@@ -7,11 +7,10 @@ class SearchPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey[900], // Thay đổi màu nếu muốn
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
