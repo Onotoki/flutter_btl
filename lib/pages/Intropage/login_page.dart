@@ -2,15 +2,20 @@ import 'package:btl/pages/Intropage/forget_password_page.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+  
 
   @override
   State<LoginPage> createState() => LoginPageState();
 }
 
 class LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,8 +88,32 @@ class LoginPageState extends State<LoginPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   // TODO: Thêm xử lý đăng nhập
+                  try {
+                    await FirebaseAuth.instance.signInWithEmailAndPassword(
+                      email: emailController.text.trim(),
+                      password: passwordController.text.trim(),
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Login successful"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+
+                    // TODO: Chuyển hướng đến HomePage
+                    // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+
+                  } on FirebaseAuthException catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Login failed: ${e.message}"),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
                   print("Đăng nhập!");
                 },
                 style: ElevatedButton.styleFrom(
