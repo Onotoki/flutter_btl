@@ -11,6 +11,7 @@ class IntroPage extends StatelessWidget {
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      await googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) return;
