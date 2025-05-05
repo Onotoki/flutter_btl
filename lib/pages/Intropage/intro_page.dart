@@ -25,7 +25,13 @@ class IntroPage extends StatelessWidget {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-
+      ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Login successful!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
       print("Đăng nhập Google thành công!");
       Navigator.pushReplacement(
         context,
