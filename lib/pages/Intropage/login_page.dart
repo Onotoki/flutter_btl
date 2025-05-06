@@ -1,13 +1,12 @@
 import 'package:btl/pages/Intropage/forget_password_page.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/home_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-  
 
   @override
   State<LoginPage> createState() => LoginPageState();
@@ -55,6 +54,7 @@ class LoginPageState extends State<LoginPage> {
 
             // Ô nhập email
             TextField(
+              controller: emailController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
@@ -71,6 +71,7 @@ class LoginPageState extends State<LoginPage> {
             // Ô nhập mật khẩu
             TextField(
               obscureText: true,
+              controller: passwordController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
@@ -105,7 +106,6 @@ class LoginPageState extends State<LoginPage> {
 
                     // TODO: Chuyển hướng đến HomePage
                     // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
-
                   } on FirebaseAuthException catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -115,6 +115,10 @@ class LoginPageState extends State<LoginPage> {
                     );
                   }
                   print("Đăng nhập!");
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomePage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent,
@@ -143,16 +147,15 @@ class LoginPageState extends State<LoginPage> {
                     decoration: TextDecoration.underline,
                     fontSize: 14,
                   ),
-                  recognizer:
-                      TapGestureRecognizer()
-                        ..onTap = () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ForgetPasswordPage(),
-                            ),
-                          );
-                        },
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgetPasswordPage(),
+                        ),
+                      );
+                    },
                 ),
               ),
             ),

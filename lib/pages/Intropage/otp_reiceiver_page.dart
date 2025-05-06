@@ -27,31 +27,29 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
   final TextEditingController otpController = TextEditingController();
 
   void verifyOtp() async {
-  if (attempts >= 5) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Too many incorrect attempts. Please try again later.'),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
-    return;
-  }
+  final enteredOtp = otpController.text.trim();
+  print('Entered OTP: $enteredOtp');
+  print('Generated OTP: ${widget.generatedOtp}');
 
-  if (otpController.text.trim() == widget.generatedOtp) {
+  if (enteredOtp == widget.generatedOtp) {
     try {
       final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(widget.email);
+      print('Fetched sign-in methods: $methods');
 
       if (methods.isEmpty) {
-        // Tài khoản chưa tồn tại => tạo mới
+        // Tạo tài khoản mới
+        print('Creating new user...');
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: widget.email,
           password: widget.password,
         );
+        print('User created.');
 
         await FirebaseFirestore.instance.collection('users').doc(widget.email).set({
           'email': widget.email,
           'created_at': Timestamp.now(),
         });
+        print('User added to Firestore.');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -60,39 +58,43 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
           ),
         );
       } else {
+        // Đăng nhập nếu tài khoản đã tồn tại
+        print('Logging in existing user...');
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: widget.email,
+          password: widget.password,
+        );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account already exists. Logging in...'),
+            content: Text('Logged in successfully!'),
             backgroundColor: Colors.orange,
           ),
         );
       }
 
-      // Dù là tạo mới hay đã tồn tại -> điều hướng về Intro hoặc Home
+      // Điều hướng
+      print('Navigating to IntroPage...');
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const IntroPage()), // hoặc HomePage
+        MaterialPageRoute(builder: (context) => const IntroPage()),
         (route) => false,
       );
     } catch (e) {
+      print('Error during OTP verification: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
       );
     }
   } else {
-    attempts++;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invalid OTP. Attempts left: ${5 - attempts}'),
+      const SnackBar(
+        content: Text('Incorrect OTP'),
         backgroundColor: Colors.redAccent,
       ),
     );
   }
 }
-
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +111,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
             icon: const Icon(Icons.close, size: 30, color: Colors.white),
             onPressed: () {
               Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const IntroPage()));
+                  MaterialPageRoute(builder: (context) => const HomePage()));
             },
           ),
         ],
