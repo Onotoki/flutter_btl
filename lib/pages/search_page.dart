@@ -6,6 +6,7 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[900],
       appBar: AppBar(
         backgroundColor: Colors.grey[900], // Thay đổi màu nếu muốn
         title: Container(
