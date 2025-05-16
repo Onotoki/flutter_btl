@@ -1,10 +1,23 @@
-import 'package:btl/pages/Intropage/register_page.dart';
+import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/Intropage/register_page.dart'; // Thêm HomePage vào
+import 'package:btl/pages/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+int attempts = 0;
 
 class OtpReceiverPage extends StatefulWidget {
-  final String email; // Email được truyền từ bước đăng ký
+  final String email;
+  final String generatedOtp;
+  final String password; // Nhận OTP được tạo từ RegisterPage
 
-  const OtpReceiverPage({super.key, required this.email});
+  const OtpReceiverPage({
+    super.key,
+    required this.email,
+    required this.generatedOtp,
+    required this.password,
+  });
 
   @override
   State<OtpReceiverPage> createState() => _OtpReceiverPageState();
@@ -12,6 +25,76 @@ class OtpReceiverPage extends StatefulWidget {
 
 class _OtpReceiverPageState extends State<OtpReceiverPage> {
   final TextEditingController otpController = TextEditingController();
+
+  void verifyOtp() async {
+  final enteredOtp = otpController.text.trim();
+  print('Entered OTP: $enteredOtp');
+  print('Generated OTP: ${widget.generatedOtp}');
+
+  if (enteredOtp == widget.generatedOtp) {
+    try {
+      final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(widget.email);
+      print('Fetched sign-in methods: $methods');
+
+      if (methods.isEmpty) {
+        // Tạo tài khoản mới
+        print('Creating new user...');
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: widget.email,
+          password: widget.password,
+        );
+        print('User created.');
+
+        await FirebaseFirestore.instance.collection('users').doc(widget.email).set({
+          'email': widget.email,
+          'created_at': Timestamp.now(),
+        });
+        print('User added to Firestore.');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Đăng nhập nếu tài khoản đã tồn tại
+        print('Logging in existing user...');
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: widget.email,
+          password: widget.password,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged in successfully!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+
+      // Điều hướng
+      print('Navigating to IntroPage...');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const IntroPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      print('Error during OTP verification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+      );
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Incorrect OTP'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +110,8 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
           IconButton(
             icon: const Icon(Icons.close, size: 30, color: Colors.white),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => RegisterPage()),
-              ); // quay lại hoặc thoát
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => const HomePage()));
             },
           ),
         ],
@@ -41,30 +122,18 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 30),
-
-            const Icon(
-              Icons.email_outlined,
-              size: 60,
-              color: Colors.greenAccent,
-            ),
+            const Icon(Icons.email_outlined,
+                size: 60, color: Colors.greenAccent),
             const SizedBox(height: 10),
-
-            Text(
-              "Enter the verification code sent to:",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
+            Text("Enter the verification code sent to:",
+                style: const TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 6),
-            Text(
-              widget.email,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-
+            Text(widget.email,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16)),
             const SizedBox(height: 30),
-
             TextField(
               controller: otpController,
               keyboardType: TextInputType.number,
@@ -74,56 +143,31 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
                 labelStyle: const TextStyle(color: Colors.white70),
                 filled: true,
                 fillColor: Colors.white10,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.greenAccent),
                 ),
               ),
             ),
-
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Xử lý xác minh OTP
-                },
+                onPressed: verifyOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                      borderRadius: BorderRadius.circular(14)),
                 ),
                 child: const Text(
                   "Verify",
                   style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  // TODO: Xử lý gửi lại OTP
-                },
-                child: const Text(
-                  "Resend OTP",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    decoration: TextDecoration.underline,
-                  ),
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),

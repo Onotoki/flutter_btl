@@ -30,13 +30,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.16.0
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  cloud_firestore: ^5.6.7
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.1.1
   flutter_launcher_icons: ^0.13.1
   flutter_staggered_animations: ^1.1.1
   flutterfire_cli: ^1.2.0
+  http: ^1.2.0
+  emailjs: ^4.0.0
+  sqflite: ^2.0.2+3
+  path_provider: ^2.0.11
+
 flutter_icons:
   android: true
   ios: true
@@ -59,6 +65,9 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+dependency_overrides:
+  firebase_auth_platform_interface: ^7.0.3
+  firebase_auth_web: ^5.10.5
 
 # The following section is specific to Flutter packages.
 flutter:

@@ -11,6 +11,7 @@ class IntroPage extends StatelessWidget {
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      await googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) return;
@@ -24,7 +25,13 @@ class IntroPage extends StatelessWidget {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-
+      ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Login successful!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
       print("Đăng nhập Google thành công!");
       Navigator.pushReplacement(
         context,
