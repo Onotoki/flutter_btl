@@ -1,10 +1,12 @@
+
+import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/book_page.dart';
 import 'package:flutter/material.dart';
-import 'package:btl/pages/Intropage/intro_page.dart'; // Màn hình mở đầu
-import 'package:btl/pages/book_page.dart'; // Màn hình danh sách sách
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // Đảm bảo Flutter được khởi tạo
-
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -15,10 +17,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(), // Giao diện tối
-      initialRoute: '/', // Màn hình khởi động là IntroPage()
+      initialRoute: '/', 
       routes: {
-        '/': (context) => const IntroPage(),
+        '/': (context) => IntroPage(),
         '/books': (context) => const BookPage(),
       },
     );
