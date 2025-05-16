@@ -86,11 +86,11 @@ class LoginPageState extends State<LoginPage> {
             const SizedBox(height: 30),
 
             // Nút Login
+            // Nút Login
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
-                  // TODO: Thêm xử lý đăng nhập
                   try {
                     await FirebaseAuth.instance.signInWithEmailAndPassword(
                       email: emailController.text.trim(),
@@ -104,8 +104,11 @@ class LoginPageState extends State<LoginPage> {
                       ),
                     );
 
-                    // TODO: Chuyển hướng đến HomePage
-                    // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+                    // Chỉ chuyển hướng khi đăng nhập thành công
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomePage()),
+                    );
                   } on FirebaseAuthException catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -114,11 +117,6 @@ class LoginPageState extends State<LoginPage> {
                       ),
                     );
                   }
-                  print("Đăng nhập!");
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomePage()),
-                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent,

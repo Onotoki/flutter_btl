@@ -3,13 +3,13 @@ import 'package:btl/pages/Intropage/login_page.dart';
 import 'package:btl/pages/Intropage/register_page.dart';
 import 'package:btl/pages/home_page.dart';
 import 'package:btl/pages/info_book.dart';
+
 import 'package:flutter/material.dart';
-import 'package:btl/pages/Intropage/intro_page.dart'; // Màn hình mở đầu
-import 'package:btl/pages/book_page.dart'; // Màn hình danh sách sách
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // Đảm bảo Flutter được khởi tạo
-
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
