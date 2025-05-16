@@ -9,7 +9,7 @@ class BackToIntroPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: BoxConstraints(
-          maxHeight: 105), // Giới hạn chiều cao để tránh dư phần màu đen
+          maxHeight: 120), // Giới hạn chiều cao để tránh dư phần màu đen
       color: Colors.grey[900],
       padding: const EdgeInsets.all(8), // Giảm padding tổng thể
       child: Column(
@@ -33,9 +33,9 @@ class BackToIntroPage extends StatelessWidget {
                 child: Text(
                   "Create an account",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18),
                 ),
               ),
             ),
@@ -56,7 +56,7 @@ class BackToIntroPage extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 23,
+                      fontSize: 24,
                     ),
                   ),
                 ),

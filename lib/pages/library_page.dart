@@ -1,22 +1,42 @@
+import 'package:btl/models/book_data.dart';
 import 'package:flutter/material.dart';
-import 'package:btl/components/book_tile.dart';
-import 'package:btl/models/book.dart';
+import '../models/book.dart';
+import '../components/book_tile.dart';
 
-class LibraryPage extends StatelessWidget {
+class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    List<Book> favoriteBooks = List.generate(
-        4, (index) => Book(imagePath: "lib/images/book.jpg")); // Danh mục mới
+  _LibraryPageState createState() => _LibraryPageState();
+}
 
+class _LibraryPageState extends State<LibraryPage> {
+  List<Book> favoriteBooks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteBooks();
+  }
+
+  void _loadFavoriteBooks() {
+    setState(() {
+      favoriteBooks = BookData.getBooksByCategory("Favorite Books");
+    });
+
+    print(
+        "📚 Danh sách sách yêu thích: ${favoriteBooks.length} cuốn"); // Kiểm tra dữ liệu
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(
+        title: const Text(
           "Library",
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 25),
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 27),
         ),
         backgroundColor: Colors.grey[900],
       ),
@@ -24,9 +44,8 @@ class LibraryPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            buildSectionTitle(
-                context, "Favorite Books", favoriteBooks), // Mục mới
-            buildHorizontalBookList(favoriteBooks), // Danh sách sách
+            buildSectionTitle(context, "Favorite Books", favoriteBooks),
+            buildHorizontalBookList(favoriteBooks),
           ],
         ),
       ),
@@ -35,23 +54,14 @@ class LibraryPage extends StatelessWidget {
 
   Widget buildSectionTitle(
       BuildContext context, String title, List<Book> books) {
-    return GestureDetector(
-      onTap: () {
-        // Điều hướng nếu cần
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20, left: 15),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Text(
-              "$title >",
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, left: 15),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          "$title (${books.length}) >",
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
         ),
       ),
     );
@@ -60,13 +70,17 @@ class LibraryPage extends StatelessWidget {
   Widget buildHorizontalBookList(List<Book> books) {
     return SizedBox(
       height: 200,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        itemBuilder: (context, index) {
-          return BookTile(linkImage: books[index].imagePath);
-        },
-      ),
+      child: books.isEmpty
+          ? const Center(
+              child: Text("No favorite books found",
+                  style: TextStyle(color: Colors.white)))
+          : ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: books.length,
+              itemBuilder: (context, index) {
+                return BookTile(linkImage: books[index].imagePath);
+              },
+            ),
     );
   }
 }

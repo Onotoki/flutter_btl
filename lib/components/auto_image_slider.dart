@@ -52,9 +52,12 @@ class _AutoImageSliderState extends State<AutoImageSlider> {
         controller: _pageController,
         itemCount: images.length,
         itemBuilder: (context, index) {
-          return Image.asset(
-            images[index],
-            fit: BoxFit.contain,
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: Image.asset(
+              images[index],
+              fit: BoxFit.contain,
+            ),
           );
         },
       ),

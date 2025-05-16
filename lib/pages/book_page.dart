@@ -1,43 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:btl/components/book_tile.dart';
 import 'package:btl/models/book.dart';
+import 'package:btl/models/book_data.dart';
+import 'package:btl/pages/category_books_page.dart';
+import 'package:btl/components/book_tile.dart';
+import 'package:btl/components/auto_image_slider.dart';
 import 'package:btl/utils/back_to_intro_page.dart';
-import 'package:btl/components/auto_image_slider.dart'; // Import widget slideshow
-import 'details_page.dart';
 
-class BookPage extends StatelessWidget {
+class BookPage extends StatefulWidget {
   const BookPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    List<Book> books =
-        List.generate(4, (index) => Book(imagePath: "lib/images/book.jpg"));
+  _BookPageState createState() => _BookPageState();
+}
 
+class _BookPageState extends State<BookPage> {
+  List<Book> recommendedBooks = [];
+  List<Book> contemporaryBooks = [];
+  List<Book> enemiesToLoversBooks = [];
+  List<Book> loveStoriesBooks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBooks();
+  }
+
+  void _loadBooks() {
+    setState(() {
+      recommendedBooks = BookData.getBooksByCategory("Recommend For You");
+      contemporaryBooks = BookData.getBooksByCategory("Top in Contemporary");
+      enemiesToLoversBooks = BookData.getBooksByCategory("Enemies to Lovers");
+      loveStoriesBooks = BookData.getBooksByCategory("Love Stories");
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[900],
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(110),
-        child: Container(
-          color: Colors.grey[900],
-          child: SafeArea(child: BackToIntroPage()),
-        ),
+        preferredSize: const Size.fromHeight(120),
+        child: SafeArea(child: BackToIntroPage()),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Thêm slideshow hình ảnh trước phần Happy Endings
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
-              child: AutoImageSlider(), // Widget ảnh tự động chuyển đổi
+              child: AutoImageSlider(),
             ),
-            buildSectionTitle(context, "Happy Endings", books),
-            buildHorizontalBookList(books),
-            buildSectionTitle(context, "Top in Contemporary", books),
-            buildHorizontalBookList(books),
-            buildSectionTitle(context, "Enemies to Lovers", books),
-            buildHorizontalBookList(books),
-            buildSectionTitle(context, "Love Stories", books),
-            buildHorizontalBookList(books),
+            const SizedBox(height: 15),
+            buildSectionTitle(context, "Recommend For You", recommendedBooks),
+            buildHorizontalBookList(recommendedBooks),
+            buildSectionTitle(
+                context, "Top in Contemporary", contemporaryBooks),
+            buildHorizontalBookList(contemporaryBooks),
+            buildSectionTitle(
+                context, "Enemies to Lovers", enemiesToLoversBooks),
+            buildHorizontalBookList(enemiesToLoversBooks),
+            buildSectionTitle(context, "Love Stories", loveStoriesBooks),
+            buildHorizontalBookList(loveStoriesBooks),
+            SizedBox(
+              height: 15,
+            )
           ],
         ),
       ),
@@ -46,28 +71,25 @@ class BookPage extends StatelessWidget {
 
   Widget buildSectionTitle(
       BuildContext context, String title, List<Book> books) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, left: 15),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
               builder: (context) =>
-                  DetailsPage(categoryTitle: title, books: books)),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20, left: 15),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Text(
-              "$title >",
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20),
+                  CategoryBooksPage(category: title, books: books),
             ),
-          ],
+          );
+        },
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            "$title >",
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+          ),
         ),
       ),
     );
@@ -76,13 +98,17 @@ class BookPage extends StatelessWidget {
   Widget buildHorizontalBookList(List<Book> books) {
     return SizedBox(
       height: 200,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        itemBuilder: (context, index) {
-          return BookTile(linkImage: books[index].imagePath);
-        },
-      ),
+      child: books.isEmpty
+          ? const Center(
+              child: Text("No books available",
+                  style: TextStyle(color: Colors.white)))
+          : ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: books.length,
+              itemBuilder: (context, index) {
+                return BookTile(linkImage: books[index].imagePath);
+              },
+            ),
     );
   }
 }
