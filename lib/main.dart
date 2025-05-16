@@ -1,9 +1,6 @@
+
 import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/Intropage/login_page.dart';
-import 'package:btl/pages/Intropage/register_page.dart';
-import 'package:btl/pages/admin/admin_story_page.dart';
-import 'package:btl/pages/home_page.dart';
-import 'package:btl/pages/info_book.dart';
+import 'package:btl/pages/book_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -20,9 +17,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: IntroPage(),
+      initialRoute: '/', 
       routes: {
-        '/infopage': (context) => Info(),
+        '/': (context) => IntroPage(),
+        '/books': (context) => const BookPage(),
       },
     );
   }
