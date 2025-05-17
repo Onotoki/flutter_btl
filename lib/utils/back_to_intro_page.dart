@@ -40,6 +40,25 @@ class BackToIntroPage extends StatelessWidget {
               ),
             ),
           ),
+          (route) => false, // Removes all previous routes from the stack
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.green[900],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Center(
+            child: Text(
+              "Create an account",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+
 
           // Phần logo, tiêu đề và nút search
           Padding(

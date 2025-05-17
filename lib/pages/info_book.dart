@@ -51,7 +51,7 @@ class _InfoState extends State<Info> with SingleTickerProviderStateMixin {
       length: 2,
       child: SafeArea(
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: NestedScrollView(
             controller: _scrollController,
             physics: ClampingScrollPhysics(),
@@ -80,11 +80,11 @@ class _InfoState extends State<Info> with SingleTickerProviderStateMixin {
                     ],
                     tabAlignment: TabAlignment.start,
                     splashBorderRadius: BorderRadius.circular(20),
-                    labelColor: Colors.black,
+                    labelColor: Colors.green,
                     indicator: BoxDecoration(
                       border: Border(
                         top: BorderSide(
-                          color: Colors.black,
+                          color: Colors.green,
                           width: 2,
                         ),
                       ),
@@ -124,8 +124,10 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.black, width: 0.4))),
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(
+              top: BorderSide(
+                  color: Theme.of(context).colorScheme.secondary, width: 0.5))),
       child: _tabBar,
     );
   }

@@ -21,7 +21,6 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
           child: Text(
             "Books",
             style: TextStyle(
-              color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 23,
             ),
@@ -41,7 +40,7 @@ class PhanDuoiBackToIntroPage extends StatelessWidget {
                 ),
               );
             },
-            child: Icon(Icons.search, color: Colors.white, size: 35),
+            child: Icon(Icons.search, size: 35),
           ),
         ),
       ],

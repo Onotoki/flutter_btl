@@ -38,6 +38,9 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
   flutter_staggered_animations: ^1.1.1
   flutterfire_cli: ^1.2.0
+  flutter_bloc: ^9.1.0
+  bloc: ^9.0.0
+  shared_preferences: ^2.5.3
   http: ^1.2.0
   emailjs: ^4.0.0
   sqflite: ^2.0.2+3

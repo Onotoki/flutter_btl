@@ -30,6 +30,8 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    return Center(
+      child: Text("Library", style: TextStyle()),
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,

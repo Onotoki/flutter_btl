@@ -23,30 +23,34 @@ class _HomePageState extends State<HomePage> {
     LibraryPage(),
 
     //More
-    MorePage(),
+    Person(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_index],
-      backgroundColor: Colors.grey[900],
-      bottomNavigationBar: BottomNavigationBar(
-        onTap: (index) {
-          setState(() {
-            _index = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _index,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: "Library"),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: "More"),
-        ],
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.only(top: 3),
+        decoration: BoxDecoration(
+            border: Border(
+                top: BorderSide(color: Theme.of(context).colorScheme.primary))),
+        child: BottomNavigationBar(
+          enableFeedback: false,
+          selectedItemColor: Colors.green,
+          onTap: (index) {
+            setState(() {
+              _index = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _index,
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(icon: Icon(Icons.book), label: "Library"),
+            BottomNavigationBarItem(icon: Icon(Icons.menu), label: "Person"),
+          ],
+        ),
       ),
     );
   }

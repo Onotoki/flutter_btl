@@ -45,6 +45,12 @@ class _BookPageState extends State<BookPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            Text(
+              "$title >",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: AutoImageSlider(),
