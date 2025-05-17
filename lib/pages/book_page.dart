@@ -37,7 +37,7 @@ class _BookPageState extends State<BookPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      // backgroundColor: Colors.grey[900],
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(120),
         child: SafeArea(child: BackToIntroPage()),
@@ -45,12 +45,6 @@ class _BookPageState extends State<BookPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Text(
-              "$title >",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: AutoImageSlider(),
@@ -93,8 +87,7 @@ class _BookPageState extends State<BookPage> {
           alignment: Alignment.centerLeft,
           child: Text(
             "$title >",
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
           ),
         ),
       ),

@@ -10,7 +10,7 @@ class BackToIntroPage extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(
           maxHeight: 120), // Giới hạn chiều cao để tránh dư phần màu đen
-      color: Colors.grey[900],
+      // color: Colors.grey[900],
       padding: const EdgeInsets.all(8), // Giảm padding tổng thể
       child: Column(
         children: [
@@ -40,25 +40,6 @@ class BackToIntroPage extends StatelessWidget {
               ),
             ),
           ),
-          (route) => false, // Removes all previous routes from the stack
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.green[900],
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Center(
-            child: Text(
-              "Create an account",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-
 
           // Phần logo, tiêu đề và nút search
           Padding(
@@ -73,7 +54,7 @@ class BackToIntroPage extends StatelessWidget {
                   child: Text(
                     "Books",
                     style: TextStyle(
-                      color: Colors.white,
+                      // color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                     ),
@@ -87,7 +68,7 @@ class BackToIntroPage extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => SearchPage()),
                     );
                   },
-                  child: Icon(Icons.search, color: Colors.white, size: 35),
+                  child: Icon(Icons.search, size: 35),
                 ),
               ],
             ),

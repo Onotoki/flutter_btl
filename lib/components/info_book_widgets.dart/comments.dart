@@ -1,8 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class CommentsWidget extends StatelessWidget {
-  const CommentsWidget({super.key});
-
+  CommentsWidget({super.key});
+  String? currentUid = FirebaseAuth.instance.currentUser!.uid;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -51,37 +52,7 @@ class CommentsWidget extends StatelessWidget {
                       Text('comment'),
                       Text('comment'),
                       Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
+                      Text('$currentUid'),
                     ],
                   ),
                 ),

@@ -30,25 +30,25 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text("Library", style: TextStyle()),
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
           "Library",
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 27),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 27),
         ),
-        backgroundColor: Colors.grey[900],
+
+        // backgroundColor: Colors.grey[700],
       ),
-      backgroundColor: Colors.grey[900],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            buildSectionTitle(context, "Favorite Books", favoriteBooks),
-            buildHorizontalBookList(favoriteBooks),
-          ],
+      // backgroundColor: Colors.grey[900],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              buildSectionTitle(context, "Favorite Books", favoriteBooks),
+              buildHorizontalBookList(favoriteBooks),
+            ],
+          ),
         ),
       ),
     );
@@ -62,8 +62,7 @@ class _LibraryPageState extends State<LibraryPage> {
         alignment: Alignment.centerLeft,
         child: Text(
           "$title (${books.length}) >",
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
       ),
     );
@@ -74,8 +73,7 @@ class _LibraryPageState extends State<LibraryPage> {
       height: 200,
       child: books.isEmpty
           ? const Center(
-              child: Text("No favorite books found",
-                  style: TextStyle(color: Colors.white)))
+              child: Text("No favorite books found", style: TextStyle()))
           : ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: books.length,
