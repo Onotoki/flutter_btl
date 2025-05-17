@@ -3,6 +3,7 @@ import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/book_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:btl/pages/admin/admin_story_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
