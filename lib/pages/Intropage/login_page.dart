@@ -1,7 +1,9 @@
 import 'package:btl/pages/Intropage/forget_password_page.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/home_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,6 +13,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,6 +54,7 @@ class LoginPageState extends State<LoginPage> {
 
             // Ô nhập email
             TextField(
+              controller: emailController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
@@ -66,6 +71,7 @@ class LoginPageState extends State<LoginPage> {
             // Ô nhập mật khẩu
             TextField(
               obscureText: true,
+              controller: passwordController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
@@ -80,12 +86,37 @@ class LoginPageState extends State<LoginPage> {
             const SizedBox(height: 30),
 
             // Nút Login
+            // Nút Login
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Thêm xử lý đăng nhập
-                  print("Đăng nhập!");
+                onPressed: () async {
+                  try {
+                    await FirebaseAuth.instance.signInWithEmailAndPassword(
+                      email: emailController.text.trim(),
+                      password: passwordController.text.trim(),
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Login successful"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+
+                    // Chỉ chuyển hướng khi đăng nhập thành công
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomePage()),
+                    );
+                  } on FirebaseAuthException catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Login failed: ${e.message}"),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent,
@@ -114,16 +145,15 @@ class LoginPageState extends State<LoginPage> {
                     decoration: TextDecoration.underline,
                     fontSize: 14,
                   ),
-                  recognizer:
-                      TapGestureRecognizer()
-                        ..onTap = () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ForgetPasswordPage(),
-                            ),
-                          );
-                        },
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgetPasswordPage(),
+                        ),
+                      );
+                    },
                 ),
               ),
             ),

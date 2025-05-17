@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/Intropage/otp_reiceiver_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:emailjs/emailjs.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,22 +22,72 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
+  String? generatedOtp;
+
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
   }
 
+  Future<void> sendOtpEmail(String email, String otp) async {
+    const url = 'https://api.emailjs.com/api/v1.0/email/send';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'origin': 'http://localhost',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'service_id': 'service_m6uo75i',
+          'template_id': 'template_jpqztvs',
+          'user_id': '7lv6xkhogmqvmFhEK',
+          'template_params': {
+            'email': email,
+            'passcode': otp,
+          },
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('OTP sent successfully!');
+      } else {
+        print('Failed to send OTP: ${response.body}');
+      }
+    } catch (e) {
+      print('Error sending OTP: $e');
+    }
+  }
+
   //
-  void handleRegister() {
+  Future<void> handleRegister() async {
     if (_formKey.currentState!.validate()) {
       final email = emailController.text.trim();
+      final methods =
+          await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+      if (methods.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email already registered. Please log in.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
 
-      // TODO: Gửi OTP tới backend nếu có
-
+      generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
+          .toString();
+      await sendOtpEmail(email, generatedOtp!);
       // ✅ Điều hướng sang trang nhập OTP
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => OtpReceiverPage(email: email)),
+        MaterialPageRoute(
+            builder: (context) => OtpReceiverPage(
+                  email: email,
+                  generatedOtp: generatedOtp!,
+                  password: passwordController.text.trim(),
+                )),
       );
     }
   }
@@ -52,10 +106,8 @@ class _RegisterPageState extends State<RegisterPage> {
           IconButton(
             icon: const Icon(Icons.close, size: 30, color: Colors.white),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const IntroPage()),
-              );
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => const IntroPage()));
             },
           ),
         ],
