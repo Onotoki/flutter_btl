@@ -1,3 +1,4 @@
+import 'package:btl/pages/categories_page.dart';
 import 'package:flutter/material.dart';
 
 import 'book_page.dart';
@@ -18,6 +19,9 @@ class _HomePageState extends State<HomePage> {
   List<Widget> _pages = [
     //Home
     BookPage(),
+
+    //Categories
+    CategoriesPage(),
 
     //Library
     LibraryPage(),
@@ -47,6 +51,8 @@ class _HomePageState extends State<HomePage> {
           currentIndex: _index,
           items: [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.search_sharp), label: "Categories"),
             BottomNavigationBarItem(icon: Icon(Icons.book), label: "Library"),
             BottomNavigationBarItem(icon: Icon(Icons.menu), label: "Person"),
           ],

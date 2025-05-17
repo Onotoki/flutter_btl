@@ -1,8 +1,10 @@
+import 'package:btl/pages/info_book.dart';
 import 'package:flutter/material.dart';
 
 class BookTile extends StatelessWidget {
-  String linkImage;
-  BookTile({super.key, required this.linkImage});
+  final String linkImage;
+
+  const BookTile({super.key, required this.linkImage});
 
   @override
   Widget build(BuildContext context) {
@@ -10,8 +12,11 @@ class BookTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10, left: 15),
       child: GestureDetector(
         onTap: () {
-          print('bạn vừa nhân getsture');
-          Navigator.of(context).pushNamed('/infopage', arguments: linkImage);
+          print('Bạn vừa nhấn Gesture');
+          // Navigator.of(context).pushNamed('/infopage',
+          //     arguments: linkImage); // Only passing the image
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => Info()));
         },
         child: Container(
           width: 120,
@@ -20,8 +25,8 @@ class BookTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: ClipRRect(
-            child: Image.asset(linkImage, fit: BoxFit.cover),
             borderRadius: BorderRadius.circular(10),
+            child: Image.asset(linkImage, fit: BoxFit.cover),
           ),
         ),
       ),

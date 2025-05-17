@@ -83,12 +83,19 @@ class _BookPageState extends State<BookPage> {
             ),
           );
         },
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            "$title >",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "$title",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+            ),
+            Icon(
+              Icons.navigate_next,
+              size: 30,
+              color: Colors.grey,
+            )
+          ],
         ),
       ),
     );
