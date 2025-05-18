@@ -54,7 +54,10 @@ class RateAllWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.tag_faces_rounded),
+                      Icon(
+                        Icons.tag_faces_rounded,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       Text(
                         'Đánh giá',
                         style: TextStyle(fontSize: 14),
@@ -63,7 +66,7 @@ class RateAllWidget extends StatelessWidget {
                   ),
                   Positioned(
                     top: 0,
-                    left: 108,
+                    left: 128,
                     child: Container(
                       padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -72,7 +75,10 @@ class RateAllWidget extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: const Color.fromARGB(255, 242, 184, 58),
                       ),
-                      child: Text('9.0'),
+                      child: Text(
+                        '9.0',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   )
                 ],
@@ -100,7 +106,13 @@ class RateAllWidget extends StatelessWidget {
                   BoxDecoration(borderRadius: BorderRadius.circular(50)),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [Icon(Icons.messenger), Text('Bình luận')],
+                children: [
+                  Icon(
+                    Icons.messenger,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  Text('Bình luận')
+                ],
               ),
             ),
           ),

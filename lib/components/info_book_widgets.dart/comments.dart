@@ -97,7 +97,7 @@ class CommentsWidget extends StatelessWidget {
                 bottom: 0,
               ),
               child: Container(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.only(
                     bottom: 20, top: 8, left: 8, right: 8),
                 child: TextField(

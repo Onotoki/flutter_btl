@@ -11,7 +11,6 @@ class IntroPage extends StatelessWidget {
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
-      await googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) return;
@@ -25,13 +24,7 @@ class IntroPage extends StatelessWidget {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-      ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login successful!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
+
       print("Đăng nhập Google thành công!");
       Navigator.pushReplacement(
         context,
@@ -97,11 +90,18 @@ class IntroPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset('assets/image/Google__G__logo.png',height: 30,width: 30,),
+                    Image.asset(
+                      'assets/image/Google__G__logo.png',
+                      height: 30,
+                      width: 30,
+                    ),
                     SizedBox(width: 10),
                     Text(
                       "Continue with Google",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
@@ -110,11 +110,10 @@ class IntroPage extends StatelessWidget {
             //Email button
             const SizedBox(height: 30),
             GestureDetector(
-              onTap:
-                  () => (Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  )),
+              onTap: () => (Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              )),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -124,10 +123,18 @@ class IntroPage extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.email, size: 30),
+                  children: [
+                    Icon(
+                      Icons.email,
+                      size: 30,
+                      color: Colors.grey.shade700,
+                    ),
                     SizedBox(width: 10),
-                    Text("Continue with Email", style: TextStyle(fontSize: 16)),
+                    Text("Continue with Email",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                        )),
                   ],
                 ),
               ),
@@ -143,16 +150,15 @@ class IntroPage extends StatelessWidget {
                     TextSpan(
                       text: "Sign up",
                       style: const TextStyle(color: Colors.greenAccent),
-                      recognizer:
-                          TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RegisterPage(),
-                                ),
-                              );
-                            },
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RegisterPage(),
+                            ),
+                          );
+                        },
                     ),
                   ],
                 ),

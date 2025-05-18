@@ -1,0 +1,210 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "description": "[OTruyen.CC](https://otruyen.cc) Website cung cấp truyện tranh miễn phí nhanh chất lượng cao. Nguồn truyện tranh chất lượng cao cập nhật nhanh nhất. API truyện tranh, Data truyện tranh miễn phí",
+      "version": "1.0.0",
+      "title": "OTruyen API",
+      "contact": {
+        "url": "https://t.me/+NONEJnxW6Sw1MTRl"
+      }
+    },
+    "host": "otruyenapi.com",
+    "basePath": "/v1/api",
+    "tags": [
+      {
+        "name": "home",
+        "description": "Thông tin cho trang chủ"
+      },
+      {
+        "name": "list",
+        "description": "Trang danh sách truyện theo trạng thái"
+      },
+      {
+        "name": "categories",
+        "description": "Thể loại truyện & danh sách truyện theo thể loại"
+      },
+      {
+        "name": "comic",
+        "description": "Thông tin truyện"
+      },
+      {
+        "name": "search",
+        "description": "Tìm kiếm truyện"
+      }
+    ],
+    "schemes": [
+      "https"
+    ],
+    "paths": {
+      "/home": {
+        "get": {
+          "tags": [
+            "home"
+          ],
+          "summary": "Danh sách truyện tại trang chủ",
+          "description": "",
+          "produces": [
+            "application/json"
+          ],
+                  "responses": {
+            "200": {
+              "description": "successful operation"
+            }
+          }
+        }
+      },
+          "/danh-sach/{type}": {
+        "get": {
+          "tags": [
+            "list"
+          ],
+          "summary": "Trang danh sách truyện",
+          "description": "",
+          "produces": [
+            "application/json"
+          ],
+                  "parameters": [
+                      {
+              "name": "type",
+              "in": "path",
+              "description": "Phân loại tình trạng của truyện",
+              "required": true,
+              "type": "string",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "truyen-moi",
+                  "sap-ra-mat",
+                  "dang-phat-hanh",
+                                  "hoan-thanh"
+                ]
+              },
+                          "default": "truyen-moi"
+            },
+            {
+              "name": "page",
+              "in": "query",
+              "description": "Page",
+              "required": true,
+              "type": "integer",
+              "minimum": 1,
+              "format": "int64",
+                          "default": 1
+            }
+          ],
+                  "responses": {
+            "200": {
+              "description": "successful operation"
+            }
+          }
+        }
+      },
+          "/the-loai": {
+        "get": {
+          "tags": [
+            "categories"
+          ],
+          "summary": "Danh sách thể loại truyện",
+          "description": "",
+          "produces": [
+            "application/json"
+          ],
+                  "responses": {
+            "200": {
+              "description": "successful operation"
+            }
+          }
+        }
+      },
+          "/the-loai/{slug}": {
+        "get": {
+          "tags": [
+            "categories"
+          ],
+          "summary": "Danh sách truyện của thể loại",
+          "description": "",
+          "produces": [
+            "application/json"
+          ],
+                  "parameters": [
+                      {
+              "name": "slug",
+              "in": "path",
+              "description": "Category slug",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "page",
+              "in": "query",
+              "description": "Page",
+              "required": true,
+              "type": "integer",
+              "minimum": 1,
+              "format": "int64",
+                          "default": 1
+            }
+          ],
+                  "responses": {
+            "200": {
+              "description": "successful operation"
+            }
+          }
+        }
+      },
+          "/truyen-tranh/{slug}": {
+        "get": {
+          "tags": [
+            "comic"
+          ],
+          "summary": "Thông tin truyện",
+          "description": "",
+          "produces": [
+            "application/json"
+          ],
+                  "parameters": [
+                      {
+              "name": "slug",
+              "in": "path",
+              "description": "Comic slug",
+              "required": true,
+              "type": "string"
+            }
+          ],
+                  "responses": {
+            "200": {
+              "description": "successful operation"
+            }
+          }
+        }
+      },
+          "/tim-kiem": {
+        "get": {
+          "tags": [
+            "search"
+          ],
+          "summary": "Tìm kiếm truyện",
+          "description": "",
+          "produces": [
+            "application/json"
+          ],
+                  "parameters": [
+                      {
+              "name": "keyword",
+              "in": "query",
+              "description": "Từ khóa tìm kiếm",
+              "required": true,
+              "type": "string"
+            }
+          ],
+                  "responses": {
+            "200": {
+              "description": "successful operation"
+            }
+          }
+        }
+      }
+    },
+      "definitions": {
+      }
+  }
