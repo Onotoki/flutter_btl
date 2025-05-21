@@ -20,7 +20,7 @@ class Category {
     return Category(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      description: json['description'] ?? '',
+      description: json[''] ?? '',
       stories: _parseStories(json),
       slug: json['slug'] ?? '',
     );

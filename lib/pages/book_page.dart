@@ -216,6 +216,8 @@ class _BookPageState extends State<BookPage> {
               builder: (context) => const CategoriesPage(),
             ),
           );
+        } else {
+          print(title);
         }
         // Còn lại là các danh mục khác - có thể mở trang danh sách đầy đủ
       },

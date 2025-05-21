@@ -273,13 +273,11 @@ class OTruyenApi {
 
           result['images'] = images;
         }
-
         // Tìm nội dung văn bản
         if (item.containsKey('content') && item['content'] != null) {
           result['content'] = item['content'].toString();
         }
       }
-
       return result;
     }
 
