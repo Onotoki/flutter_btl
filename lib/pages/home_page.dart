@@ -1,3 +1,4 @@
+import 'package:btl/pages/categories_page.dart';
 import 'package:flutter/material.dart';
 
 import 'book_page.dart';
@@ -22,6 +23,9 @@ class _HomePageState extends State<HomePage> {
 
     //Categories
     const CategoriesPage(),
+
+    //Categories
+    CategoriesPage(),
 
     //Library
     const LibraryPage(),

@@ -126,7 +126,7 @@ class _SearchPageState extends State<SearchPage> {
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
@@ -238,4 +238,10 @@ class _SearchPageState extends State<SearchPage> {
                     ),
     );
   }
+
+  // @override
+  // void dispose() {
+  //   searchController.dispose();
+  //   super.dispose();
+  // }
 }
