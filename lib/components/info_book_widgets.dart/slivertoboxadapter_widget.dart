@@ -138,7 +138,9 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                 ),
 
                 // Đánh giá và bình luận
-                RateAllWidget(),
+                RateAllWidget(
+                  idBook: '',
+                ),
               ],
             ),
           ),

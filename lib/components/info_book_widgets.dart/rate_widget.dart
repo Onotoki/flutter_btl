@@ -3,7 +3,8 @@ import 'package:btl/components/info_book_widgets.dart/rate_list_icons.dart';
 import 'package:flutter/material.dart';
 
 class RateAllWidget extends StatelessWidget {
-  const RateAllWidget({super.key});
+  String idBook;
+  RateAllWidget({super.key, required this.idBook});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +67,7 @@ class RateAllWidget extends StatelessWidget {
                   ),
                   Positioned(
                     top: 0,
-                    left: 128,
+                    left: 100,
                     child: Container(
                       padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -94,7 +95,9 @@ class RateAllWidget extends StatelessWidget {
                 isScrollControlled: true,
                 context: context,
                 builder: (context) {
-                  return CommentsWidget();
+                  return CommentsWidget(
+                    idBook: idBook,
+                  );
                 },
               );
             },
@@ -112,6 +115,39 @@ class RateAllWidget extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   Text('Bình luận')
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                isScrollControlled: true,
+                context: context,
+                builder: (context) {
+                  return CommentsWidget(
+                    idBook: '',
+                  );
+                },
+              );
+            },
+            child: Container(
+              height: 60,
+              // color: Colors.deepOrange,
+              alignment: Alignment.center,
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(50)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  Text('Yêu thích')
                 ],
               ),
             ),

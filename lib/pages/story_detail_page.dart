@@ -1,4 +1,5 @@
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
+import 'package:btl/components/info_book_widgets.dart/rate_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
@@ -16,6 +17,11 @@ class StoryDetailPage extends StatefulWidget {
   @override
   State<StoryDetailPage> createState() => _StoryDetailPageState();
 }
+
+// để thực hiện đánh giá và comment có 2 trường hợp
+// th1: chưa có bất cứ ai comment hay đánh giá(khi có người đầu tiên thực hiện thì sẽ gửi id sách kèm thông tin comment hay đánh lên firebase)
+// th2: đã comment hoặc đánh giá (kéo về để hiển thị và thêm mới)
+// Kiểm tra xem id của sách đã có trên firebase chưa - nếu chưa hiển thị chưa có đánh giá, comment - nếu có thì kéo về hiển thị
 
 class _StoryDetailPageState extends State<StoryDetailPage> {
   bool isLoading = true;
@@ -337,15 +343,22 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     },
                                   );
                                 },
-                                child: Text('Chi tiết'),
+                                child: Text(
+                                  'Chi tiết',
+                                  style: TextStyle(color: Colors.green[300]),
+                                ),
                               ),
                             )
                           ],
                         ),
                       ),
-
+                      RateAllWidget(
+                        idBook: widget.story.id,
+                      ),
+                      Divider(),
                       // Chapters list
                       // Danh sách chương dạng Grid
+
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -407,7 +420,9 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     },
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[200],
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Center(
