@@ -4,10 +4,9 @@ import 'package:btl/components/info_book_widgets.dart/rate_widget.dart';
 import 'package:flutter/material.dart';
 
 class SlivertoboxadapterWidget extends StatelessWidget {
-  final VoidCallback scrollDown;
+  // final VoidCallback scrollDown;
   String linkImage;
-  SlivertoboxadapterWidget(
-      {super.key, required this.scrollDown, required this.linkImage});
+  SlivertoboxadapterWidget({super.key, required this.linkImage});
 
   @override
   Widget build(BuildContext context) {
@@ -35,16 +34,14 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                       flex: 3,
                       ontap: () {},
                     ),
-                    const SizedBox(
-                      width: 10,
-                    ),
+                    const SizedBox(width: 10),
                     Button_Info(
-                      text: 'Chương',
+                      text: 'Audio',
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.green,
                       flex: 2,
                       ontap: () {
-                        scrollDown();
+                        // scrollDown();
                       },
                     )
                   ],
@@ -65,15 +62,16 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                           TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                     ),
                     Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(4)),
-                      child: Text('Phiêu Lưu',
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(4)),
+                        child: Text(
+                          'Phiêu Lưu',
                           style: TextStyle(
                             fontSize: 11,
-                          )),
-                    )
+                          ),
+                        ))
                   ],
                 ),
 
@@ -126,7 +124,8 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                             },
                             child: Text(
                               'Chi tiết',
-                              style: TextStyle(fontSize: 14),
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.green),
                             )))
                   ],
                 ),

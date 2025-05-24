@@ -264,7 +264,10 @@ class IntroPage extends StatelessWidget {
                     SizedBox(width: 10),
                     Text(
                       "Continue with Google",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
@@ -286,10 +289,18 @@ class IntroPage extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.email, size: 30),
+                  children: [
+                    Icon(
+                      Icons.email,
+                      size: 30,
+                      color: Colors.grey.shade700,
+                    ),
                     SizedBox(width: 10),
-                    Text("Continue with Email", style: TextStyle(fontSize: 16)),
+                    Text("Continue with Email",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                        )),
                   ],
                 ),
               ),

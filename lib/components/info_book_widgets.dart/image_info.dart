@@ -10,7 +10,6 @@ class Image_Info extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 270,
-      color: Colors.white,
       child: Stack(
         alignment: AlignmentDirectional.center,
         children: [
@@ -53,6 +52,7 @@ class Image_Info extends StatelessWidget {
                 icon: Icon(
                   Icons.arrow_back_ios,
                   size: 32,
+                  color: Theme.of(context).colorScheme.secondary,
                 )),
           ),
         ],
