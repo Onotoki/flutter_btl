@@ -20,6 +20,7 @@ class BackToIntroPage extends StatelessWidget {
     final iconColor = isDarkTheme ? Colors.greenAccent : Colors.green[800];
     final textColor = isDarkTheme ? Colors.white : Colors.black;
     return Container(
+      
       constraints: BoxConstraints(
         minHeight: isLoggedIn ? 70 : 110, // Thay maxHeight bằng minHeight
         maxHeight: 110, // Giới hạn tối đa
