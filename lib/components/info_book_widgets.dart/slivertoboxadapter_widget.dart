@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class SlivertoboxadapterWidget extends StatelessWidget {
   // final VoidCallback scrollDown;
   String linkImage;
-  SlivertoboxadapterWidget({super.key, required this.linkImage});
+  SlivertoboxadapterWidget({super.key, required this.linkImage, required void Function() scrollDown});
 
   @override
   Widget build(BuildContext context) {
