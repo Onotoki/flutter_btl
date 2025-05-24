@@ -1,43 +1,122 @@
 import 'package:flutter/material.dart';
-import 'package:btl/models/book.dart';
-import 'package:btl/models/book_data.dart';
+import 'package:btl/api/otruyen_api.dart';
+import 'package:btl/models/story.dart';
+import 'package:btl/components/story_tile.dart';
+import 'package:btl/pages/story_detail_page.dart';
+import 'package:btl/utils/content_filter.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
   @override
-  _SearchPageState createState() => _SearchPageState();
+  State<SearchPage> createState() => _SearchPageState();
 }
 
 class _SearchPageState extends State<SearchPage> {
-  TextEditingController searchController = TextEditingController();
-  List<Book> allBooks = [];
-  List<Book> filteredBooks = [];
+  final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = false;
+  String _errorMessage = '';
+  List<Story> _searchResults = [];
+  bool _hasSearched = false;
+  String _debugInfo = '';
 
   @override
-  void initState() {
-    super.initState();
-    _loadBooks();
-    searchController.addListener(_filterBooks);
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  void _loadBooks() {
+  Future<void> _performSearch(String keyword) async {
+    if (keyword.trim().isEmpty) return;
+
     setState(() {
-      allBooks = BookData.getAllBooks();
-      filteredBooks =
-          []; // Không hiển thị sách ban đầu, chỉ xuất hiện khi nhập từ khóa
+      _isLoading = true;
+      _errorMessage = '';
+      _hasSearched = true;
+      _debugInfo = '';
     });
+
+    try {
+      final result = await OTruyenApi.searchComics(keyword);
+      String log = 'Kết quả tìm kiếm: ${result.keys.toList()}\n';
+      List<Story> unfilteredResults = [];
+
+      // Kiểm tra cấu trúc chuẩn của API tìm kiếm (items nằm trong response)
+      if (result.containsKey('items') && result['items'] is List) {
+        log += 'Tìm thấy items trong response\n';
+        unfilteredResults = _parseStories(result['items']);
+      }
+      // Hoặc có thể dữ liệu được đóng gói trong cấu trúc phức tạp hơn
+      else {
+        log += 'Không tìm thấy items trực tiếp, tìm kiếm thêm...\n';
+        // Debug các key có trong result
+        result.keys.forEach((key) {
+          log += '- Key: $key, Type: ${result[key].runtimeType}\n';
+        });
+
+        // Nếu có trường item (số ít)
+        if (result.containsKey('item') &&
+            result['item'] is Map<String, dynamic>) {
+          log += 'Tìm thấy item object\n';
+          unfilteredResults = [Story.fromJson(result['item'])];
+        }
+        // Nếu có trường sectionComic (như trong home.json)
+        else if (result.containsKey('sectionComic') &&
+            result['sectionComic'] is List) {
+          log += 'Tìm thấy sectionComic\n';
+          List<Story> stories = [];
+          for (var section in result['sectionComic']) {
+            if (section is Map &&
+                section.containsKey('comics') &&
+                section['comics'] is List) {
+              stories.addAll(_parseStories(section['comics']));
+            }
+          }
+          unfilteredResults = stories;
+        }
+      }
+
+      log += 'Số truyện tìm thấy trước khi lọc: ${unfilteredResults.length}\n';
+
+      // Lọc bỏ truyện người lớn
+      int beforeFilter = unfilteredResults.length;
+      List<Story> filteredResults =
+          ContentFilter.filterStories(unfilteredResults);
+      log +=
+          'Đã lọc bỏ ${beforeFilter - filteredResults.length} truyện người lớn\n';
+      log += 'Số truyện còn lại sau khi lọc: ${filteredResults.length}\n';
+
+      setState(() {
+        _searchResults = filteredResults;
+        _isLoading = false;
+        _debugInfo = log;
+        print(log);
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Không thể tìm kiếm truyện: $e';
+        _isLoading = false;
+      });
+    }
   }
 
-  void _filterBooks() {
-    String query = searchController.text.toLowerCase();
-    setState(() {
-      filteredBooks = query.isNotEmpty
-          ? allBooks
-              .where((book) => book.title.toLowerCase().contains(query))
-              .toList()
-          : []; // Chỉ hiển thị sách khi nhập từ khóa
-    });
+  // Helper method để chuyển đổi dữ liệu JSON thành danh sách Story
+  List<Story> _parseStories(dynamic data) {
+    List<Story> stories = [];
+
+    try {
+      if (data is List) {
+        for (var item in data) {
+          if (item is Map<String, dynamic>) {
+            stories.add(Story.fromJson(item));
+          }
+        }
+      }
+    } catch (e) {
+      print('Lỗi khi phân tích dữ liệu truyện: $e');
+    }
+
+    return stories;
   }
 
   @override
@@ -51,79 +130,118 @@ class _SearchPageState extends State<SearchPage> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
-            controller: searchController,
+            controller: _searchController,
             decoration: const InputDecoration(
-              hintText: "Nhập từ khóa để tìm kiếm...",
+              hintText: "Tìm kiếm truyện...",
               hintStyle: TextStyle(color: Colors.grey),
               border: InputBorder.none,
               prefixIcon: Icon(Icons.search, color: Colors.grey),
               contentPadding:
                   EdgeInsets.symmetric(vertical: 10, horizontal: 10),
             ),
+            onSubmitted: (value) {
+              _performSearch(value);
+            },
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              _searchController.clear();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              _performSearch(_searchController.text);
+            },
+          ),
+        ],
       ),
-      body: filteredBooks.isEmpty
-          ? const Center(
-              child: Text("Không có sách nào được tìm thấy",
-                  style: TextStyle(color: Colors.white, fontSize: 18)),
-            )
-          : ListView.builder(
-              itemCount: filteredBooks.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: Row(
-                    children: [
-                      // Hình ảnh sách bên trái
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          filteredBooks[index].imagePath,
-                          width: 80, // Kích thước hình ảnh
-                          height: 120,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(
-                          width: 12), // Khoảng cách giữa ảnh và tiêu đề
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
+              : !_hasSearched
+                  ? const Center(
+                      child: Text('Nhập từ khóa để tìm kiếm truyện'),
+                    )
+                  : Column(
+                      children: [
+                        // Debug info - chỉ hiển thị trong chế độ debug
+                        if (_debugInfo.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Debug Info'),
+                                  content: SingleChildScrollView(
+                                    child: Text(_debugInfo),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Đóng'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(8),
+                              color: Colors.amber.withOpacity(0.3),
+                              child: const Text('Tap for Debug Info'),
+                            ),
+                          ),
 
-                      // Phần tiêu đề bên phải
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              filteredBooks[index].title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              filteredBooks[index].author,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                        // Kết quả tìm kiếm
+                        Expanded(
+                          child: _searchResults.isEmpty
+                              ? const Center(
+                                  child: Text('Không tìm thấy truyện nào'),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: GridView.builder(
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      childAspectRatio: 0.55,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                    ),
+                                    itemCount: _searchResults.length,
+                                    itemBuilder: (context, index) {
+                                      final story = _searchResults[index];
+                                      return StoryTile(
+                                        story: story,
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  StoryDetailPage(
+                                                story: story,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                      ],
+                    ),
     );
   }
 
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   searchController.dispose();
+  //   super.dispose();
+  // }
 }

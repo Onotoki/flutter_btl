@@ -1,131 +1,150 @@
-import 'package:btl/models/book_data.dart';
 import 'package:flutter/material.dart';
-import '../models/book.dart';
+import 'package:btl/api/otruyen_api.dart';
+import 'package:btl/models/category.dart';
+import 'package:btl/pages/category_stories_page.dart';
+import 'package:btl/utils/content_filter.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
   @override
-  _CategoriesPageState createState() => _CategoriesPageState();
+  State<CategoriesPage> createState() => _CategoriesPageState();
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
-  List<String> categories = [
-    "Love Stories",
-    "Enemies to Lovers",
-  ]; // Danh sách thể loại
-
-  String selectedCategory = "Love Stories"; // Thể loại mặc định
-
-  List<Book> filteredBooks = [];
+  List<Category> categories = [];
+  bool isLoading = true;
+  String errorMessage = '';
+  String debugInfo = '';
 
   @override
   void initState() {
     super.initState();
-    _loadBooks();
+    _loadCategories();
   }
 
-  void _loadBooks() {
-    setState(() {
-      filteredBooks = BookData.getBooksByCategory(selectedCategory);
-    });
+  Future<void> _loadCategories() async {
+    String logs = '';
+    try {
+      logs += 'Starting to load categories...\n';
+      final result = await OTruyenApi.getCategories();
+
+      logs += 'Categories API Response keys: ${result.keys.toList()}\n';
+
+      // Xử lý theo cấu trúc API OTruyen - đúng cấu trúc trả về là "items" không phải "categories"
+      if (result.containsKey('items') && result['items'] is List) {
+        logs += 'Found items list in response\n';
+        List<dynamic> categoriesData = result['items'];
+        logs += 'Categories count: ${categoriesData.length}\n';
+
+        List<Category> loadedCategories = [];
+        for (var categoryData in categoriesData) {
+          if (categoryData is Map<String, dynamic>) {
+            try {
+              Category category = Category.fromJson(categoryData);
+
+              // Kiểm tra xem có phải là thể loại người lớn không
+              if (!ContentFilter.isAdultCategory(category.name)) {
+                loadedCategories.add(category);
+              } else {
+                logs += 'Filtered out adult category: ${category.name}\n';
+              }
+            } catch (e) {
+              logs += 'Error parsing category: $e\n';
+            }
+          }
+        }
+
+        setState(() {
+          categories = loadedCategories;
+          isLoading = false;
+          debugInfo = logs;
+        });
+
+        logs +=
+            'Successfully loaded ${categories.length} categories after filtering\n';
+        print(logs);
+      } else {
+        logs +=
+            'No items found in response structure. Available keys: ${result.keys.toList()}\n';
+        throw Exception('Invalid API response structure');
+      }
+    } catch (e) {
+      logs += 'Error loading categories: $e\n';
+      print(logs);
+      setState(() {
+        errorMessage = 'Không thể tải danh sách thể loại: $e';
+        isLoading = false;
+        debugInfo = logs;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          "Categories",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 27),
-        ),
+        title: const Text('Thể loại truyện'),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-
-            // DropdownButton để chọn thể loại
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: DropdownButton<String>(
-                value: selectedCategory,
-                isExpanded: true,
-                items: categories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (String? newCategory) {
-                  if (newCategory != null) {
-                    setState(() {
-                      selectedCategory = newCategory;
-                      _loadBooks(); // Cập nhật danh sách truyện theo thể loại đã chọn
-                    });
-                  }
-                },
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // Hiển thị danh sách sách theo thể loại
-            Expanded(child: buildBookList(filteredBooks)),
-          ],
-        ),
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage.isNotEmpty
+              ? Center(child: Text(errorMessage))
+              : categories.isEmpty
+                  ? const Center(child: Text('Không có thể loại nào'))
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(10),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 1.5,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        return _buildCategoryCard(categories[index]);
+                      },
+                    ),
     );
   }
 
-  Widget buildBookList(List<Book> books) {
-    return books.isEmpty
-        ? const Center(child: Text("Không có sách trong thể loại này"))
-        : ListView.builder(
-            itemCount: books.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        books[index].imagePath,
-                        width: 80,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            books[index].title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            books[index].author,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+  Widget _buildCategoryCard(Category category) {
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CategoryStoriesPage(category: category),
+            ),
           );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                category.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                '${category.stories} truyện',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
