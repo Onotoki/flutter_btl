@@ -3,16 +3,26 @@ import 'package:btl/cubit/theme_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit() : super(InitialTheme());
-
-  void lightThemeEvent() async {
-    emit(LightTheme());
-    saveTheme(LightTheme());
+  ThemeCubit() : super(LightTheme()) {
+    loadTheme(); // Load theme ngay khi khởi tạo
   }
 
-  void darkThemeEvent() async {
+  void toggleTheme() async {
+    if (state is LightTheme) {
+      await darkThemeEvent();
+    } else {
+      await lightThemeEvent();
+    }
+  }
+
+  Future<void> lightThemeEvent() async {
+    emit(LightTheme());
+    await saveTheme(LightTheme());
+  }
+
+  Future<void> darkThemeEvent() async {
     emit(DarkTheme());
-    saveTheme(DarkTheme());
+    await saveTheme(DarkTheme());
   }
 
   Future<void> saveTheme(ThemeState mode) async {
@@ -22,9 +32,10 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   Future<void> loadTheme() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('themeMode') == 'light') {
+    final String themeMode = prefs.getString('themeMode') ?? 'light'; // Mặc định là 'light' nếu không có giá trị
+    if (themeMode == 'light') {
       emit(LightTheme());
-    } else if (prefs.getString('themeMode') == 'dark') {
+    } else {
       emit(DarkTheme());
     }
   }
