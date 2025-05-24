@@ -139,49 +139,17 @@ class _AdminStoryPageState extends State<AdminStoryPage>
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            const Icon(Icons.grid_view, size: 60, color: Colors.greenAccent),
-            const SizedBox(height: 10),
-            const Text(
-              "Quản lý Truyện",
-              style: TextStyle(
-                color: Colors.greenAccent,
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 30),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: stories.orderBy('updatedAt', descending: true).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('Lỗi khi tải dữ liệu', style: TextStyle(color: Colors.white)));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Colors.greenAccent));
+          }
 
-            Expanded(
-              child: FutureBuilder<List<QueryDocumentSnapshot>>(
-                future: getStories(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      !isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        "Lỗi tải dữ liệu",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(
-                      child: Text(
-                        "Không có truyện nào",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }
+          final docs = snapshot.data!.docs;
 
                   return ListView.builder(
                     itemCount: snapshot.data!.length + (hasMore ? 1 : 0),
@@ -209,7 +177,8 @@ class _AdminStoryPageState extends State<AdminStoryPage>
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: ListTile(
-                          leading: const Icon(Icons.book, color: Colors.white70),
+                          leading:
+                              const Icon(Icons.book, color: Colors.white70),
                           title: Text(
                             data?['title'] ?? 'Không có tiêu đề',
                             style: const TextStyle(color: Colors.white),
