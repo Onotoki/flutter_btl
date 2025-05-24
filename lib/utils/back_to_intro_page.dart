@@ -22,7 +22,6 @@ class BackToIntroPage extends StatelessWidget {
     return Container(
       
       constraints: BoxConstraints(
-        
         minHeight: isLoggedIn ? 70 : 110, // Thay maxHeight bằng minHeight
         maxHeight: 110, // Giới hạn tối đa
       ),
@@ -37,7 +36,6 @@ class BackToIntroPage extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
-        
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!isLoggedIn)
@@ -52,7 +50,8 @@ class BackToIntroPage extends StatelessWidget {
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12), // Điều chỉnh padding
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 12), // Điều chỉnh padding
                   decoration: BoxDecoration(
                     color: const Color.fromARGB(255, 24, 136, 69),
                     borderRadius: BorderRadius.circular(10),
@@ -72,12 +71,14 @@ class BackToIntroPage extends StatelessWidget {
             ),
 
           // Phần header
-          SizedBox( // Bọc trong SizedBox để kiểm soát kích thước
+          SizedBox(
+            // Bọc trong SizedBox để kiểm soát kích thước
             height: 60, // Chiều cao cố định
             child: Row(
               children: [
-                const Icon(Icons.grid_view, 
-                  size: 40, 
+                const Icon(
+                  Icons.grid_view,
+                  size: 40,
                   color: Colors.greenAccent,
                 ),
                 Padding(
@@ -93,14 +94,16 @@ class BackToIntroPage extends StatelessWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: Icon(Icons.search, 
-                    color: iconColor, 
+                  icon: Icon(
+                    Icons.search,
+                    color: iconColor,
                     size: 35,
                   ),
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SearchPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const SearchPage()),
                     );
                   },
                 ),

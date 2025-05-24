@@ -155,7 +155,6 @@ class _AdminStoryPageState extends State<AdminStoryPage>
               ),
             ),
             const SizedBox(height: 30),
-
             Expanded(
               child: FutureBuilder<List<QueryDocumentSnapshot>>(
                 future: getStories(),
@@ -209,7 +208,8 @@ class _AdminStoryPageState extends State<AdminStoryPage>
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: ListTile(
-                          leading: const Icon(Icons.book, color: Colors.white70),
+                          leading:
+                              const Icon(Icons.book, color: Colors.white70),
                           title: Text(
                             data?['title'] ?? 'Không có tiêu đề',
                             style: const TextStyle(color: Colors.white),
