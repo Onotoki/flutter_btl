@@ -283,13 +283,11 @@ class _BookPageState extends State<BookPage> {
             : SingleChildScrollView(
                 child: Column(
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 50, right: 20, left: 20),
-                      child: BackToIntroPage(),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(top: 15, bottom: 20),
-                      child: PhanDuoiBackToIntroPage(),
+                    SafeArea(
+                      child: const Padding(
+                        padding: EdgeInsets.only(top: 5, bottom: 10),
+                        child: PhanDuoiBackToIntroPage(),
+                      ),
                     ),
 
                     // // Debug Info - chỉ hiển thị trong chế độ development
