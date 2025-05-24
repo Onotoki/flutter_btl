@@ -38,7 +38,6 @@ class BookData {
     return allBooks.where((book) => book.category == category).toList();
   }
 
-  // 🔥 Added method to fetch all books 🔥
   static List<Book> getAllBooks() {
     return allBooks;
   }
