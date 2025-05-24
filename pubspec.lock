@@ -337,9 +337,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
-=========
-    version: "2.23.0"
->>>>>>>>> Temporary merge branch 2
   flutter:
     dependency: "direct main"
     description: flutter
