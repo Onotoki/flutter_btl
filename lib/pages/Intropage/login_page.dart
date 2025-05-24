@@ -1,6 +1,8 @@
 import 'package:btl/pages/Intropage/forget_password_page.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/admin/admin_story_page.dart';
 import 'package:btl/pages/home_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -92,10 +94,17 @@ class LoginPageState extends State<LoginPage> {
               child: ElevatedButton(
                 onPressed: () async {
                   try {
-                    await FirebaseAuth.instance.signInWithEmailAndPassword(
+                    final userCredential =
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
                       email: emailController.text.trim(),
                       password: passwordController.text.trim(),
                     );
+
+                    // Lấy thông tin user từ Firestore
+                    final userDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(userCredential.user!.uid)
+                        .get();
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -104,11 +113,20 @@ class LoginPageState extends State<LoginPage> {
                       ),
                     );
 
-                    // Chỉ chuyển hướng khi đăng nhập thành công
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomePage()),
-                    );
+                    // Kiểm tra nếu là admin
+                    if (userDoc.exists && userDoc.data()?['isAdmin'] == true) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AdminStoryPage()),
+                      );
+                    } else {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const HomePage()),
+                      );
+                    }
                   } on FirebaseAuthException catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

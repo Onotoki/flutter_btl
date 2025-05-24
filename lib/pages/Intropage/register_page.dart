@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/Intropage/otp_reiceiver_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:emailjs/emailjs.dart';
@@ -17,10 +18,12 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
+  
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final TextEditingController nicknameController = TextEditingController();
 
   String? generatedOtp;
 
@@ -62,35 +65,55 @@ class _RegisterPageState extends State<RegisterPage> {
 
   //
   Future<void> handleRegister() async {
-    if (_formKey.currentState!.validate()) {
-      final email = emailController.text.trim();
-      final methods =
-          await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-      if (methods.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email already registered. Please log in.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-        return;
-      }
+  if (_formKey.currentState!.validate()) {
+    final email = emailController.text.trim();
+    final nickname = nicknameController.text.trim();
+    
+    // Kiểm tra nickname có sẵn
+    final isAvailable = await FirebaseFirestore.instance
+        .collection('users')
+        .where('nickname', isEqualTo: nickname)
+        .get()
+        .then((snapshot) => snapshot.docs.isEmpty);
 
-      generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
-          .toString();
-      await sendOtpEmail(email, generatedOtp!);
-      // ✅ Điều hướng sang trang nhập OTP
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => OtpReceiverPage(
-                  email: email,
-                  generatedOtp: generatedOtp!,
-                  password: passwordController.text.trim(),
-                )),
+    if (!isAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nickname already taken. Please choose another.'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
+      return;
     }
+
+    final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+    if (methods.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email already registered. Please log in.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
+        .toString();
+    await sendOtpEmail(email, generatedOtp!);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtpReceiverPage(
+          email: email,
+          generatedOtp: generatedOtp!,
+          password: passwordController.text.trim(),
+          nickname: nickname,
+        ),
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +153,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 40),
+              // Nickname
+              buildInputField(
+                label: "Nickname",
+                controller: nicknameController,
+                obscureText: false,
+                validator: (value) {
+                  if (value == null || value.isEmpty)
+                    return "Please enter nickname";
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
 
               // Email
               buildInputField(
@@ -143,6 +178,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 20),
               const SizedBox(height: 20),
 
               // Password
