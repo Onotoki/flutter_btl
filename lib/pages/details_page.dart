@@ -12,19 +12,13 @@ class DetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
       appBar: AppBar(
         title: Text(
           categoryTitle,
           style: const TextStyle(
-            color: Colors.white,
+            // color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
-        ),
-        backgroundColor: Colors.grey[900],
-        // Cập nhật màu của nút quay lại
-        iconTheme: const IconThemeData(
-          color: Colors.white, // Màu trắng cho nút quay lại
         ),
       ),
       body: Padding(

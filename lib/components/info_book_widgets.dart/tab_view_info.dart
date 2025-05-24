@@ -28,8 +28,10 @@ class TabBarViewInfo extends StatelessWidget {
                 onTap: () {},
                 child: Container(
                   decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[300]),
+                    borderRadius: BorderRadius.circular(8),
+                    // color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   child: Center(child: Text('Chương ${index + 1}')),
                 ),
               );

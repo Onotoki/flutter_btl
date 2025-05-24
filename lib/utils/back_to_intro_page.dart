@@ -61,7 +61,7 @@ class BackToIntroPage extends StatelessWidget {
                   child: Text(
                     "Books",
                     style: TextStyle(
-                      color: Colors.white,
+                      // color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                     ),

@@ -12,20 +12,20 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage> {
   List<Book> favoriteBooks = [];
+  List<Book> continueReadingBooks = []; // Thêm danh sách sách đang đọc dở
 
   @override
   void initState() {
     super.initState();
-    _loadFavoriteBooks();
+    _loadBooks();
   }
 
-  void _loadFavoriteBooks() {
+  void _loadBooks() {
     setState(() {
       favoriteBooks = BookData.getBooksByCategory("Favorite Books");
+      continueReadingBooks = BookData.getBooksByCategory(
+          "Continue Reading"); // Giả định danh mục có sẵn
     });
-
-    print(
-        "📚 Danh sách sách yêu thích: ${favoriteBooks.length} cuốn"); // Kiểm tra dữ liệu
   }
 
   @override
@@ -35,18 +35,22 @@ class _LibraryPageState extends State<LibraryPage> {
         automaticallyImplyLeading: false,
         title: const Text(
           "Library",
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 27),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 27),
         ),
-        backgroundColor: Colors.grey[900],
       ),
-      backgroundColor: Colors.grey[900],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            buildSectionTitle(context, "Favorite Books", favoriteBooks),
-            buildHorizontalBookList(favoriteBooks),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              buildSectionTitle(
+                  context, "Continue Reading", continueReadingBooks),
+              buildHorizontalBookList(
+                  continueReadingBooks), // Thêm phần continue reading
+
+              buildSectionTitle(context, "Favorite Books", favoriteBooks),
+              buildHorizontalBookList(favoriteBooks),
+            ],
+          ),
         ),
       ),
     );
@@ -60,8 +64,7 @@ class _LibraryPageState extends State<LibraryPage> {
         alignment: Alignment.centerLeft,
         child: Text(
           "$title (${books.length}) >",
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
       ),
     );
@@ -71,9 +74,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return SizedBox(
       height: 200,
       child: books.isEmpty
-          ? const Center(
-              child: Text("No favorite books found",
-                  style: TextStyle(color: Colors.white)))
+          ? const Center(child: Text("No books found", style: TextStyle()))
           : ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: books.length,

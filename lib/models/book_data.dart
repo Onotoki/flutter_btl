@@ -1,4 +1,4 @@
-import '../models/book.dart';
+import 'package:btl/models/book.dart';
 
 class BookData {
   static List<Book> allBooks = [
@@ -36,5 +36,9 @@ class BookData {
 
   static List<Book> getBooksByCategory(String category) {
     return allBooks.where((book) => book.category == category).toList();
+  }
+
+  static List<Book> getAllBooks() {
+    return allBooks;
   }
 }
