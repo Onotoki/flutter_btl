@@ -1,3 +1,4 @@
+import 'package:btl/pages/info_book.dart';
 import 'package:flutter/material.dart';
 
 class BookTile extends StatelessWidget {
@@ -10,8 +11,17 @@ class BookTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10, left: 15),
       child: GestureDetector(
         onTap: () {
-          print('bạn vừa nhân getsture');
-          Navigator.of(context).pushNamed('/infopage', arguments: linkImage);
+          try {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => Info(),
+                    settings: RouteSettings(arguments: linkImage)));
+          } catch (e) {
+            debugPrint('Navigation error: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Cannot open book: ${e.toString()}')));
+          }
         },
         child: Container(
           width: 120,
