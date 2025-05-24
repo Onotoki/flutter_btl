@@ -1,89 +1,44 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:btl/components/info_book_widgets.dart/comment.dart';
 import 'package:flutter/material.dart';
 
 class CommentsWidget extends StatelessWidget {
-  CommentsWidget({super.key});
-  String? currentUid = FirebaseAuth.instance.currentUser!.uid;
+  String idBook;
+  CommentsWidget({super.key, required this.idBook});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 750,
-      // padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Stack(
+      height: 700,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 12, right: 12, top: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Bình luận',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(
-                        Icons.expand_circle_down_outlined,
-                        size: 35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                  child: ListView(
-                    children: [
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('comment'),
-                      Text('$currentUid'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            child: Padding(
-              padding: const EdgeInsets.only(
-                bottom: 0,
-              ),
-              child: Container(
-                color: Theme.of(context).colorScheme.surface,
-                padding: const EdgeInsets.only(
-                    bottom: 20, top: 8, left: 8, right: 8),
-                child: TextField(
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    hintText: 'Hãy viết gì đó...',
-                  ),
-                ),
-              ),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 14),
+            width: 60,
+            height: 3,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(left: 12, right: 12, bottom: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Bình luận',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            thickness: 0.1,
+          ),
+          Expanded(
+            child: Comment(idBook: idBook),
+          )
         ],
       ),
     );

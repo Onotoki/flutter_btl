@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../pages/Intropage/intro_page.dart';
 import '../pages/search_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,9 +17,11 @@ class BackToIntroPage extends StatelessWidget {
         maxHeight: isLoggedIn ? 80 : 120,
       ),
       color: Colors.grey[900],
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), // Điều chỉnh padding tổng
+      padding: const EdgeInsets.symmetric(
+          horizontal: 8, vertical: 8), // Điều chỉnh padding tổng
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Thêm dòng này để column co lại vừa đủ content
+        mainAxisSize:
+            MainAxisSize.min, // Thêm dòng này để column co lại vừa đủ content
         children: [
           if (!isLoggedIn) ...[
             GestureDetector(
@@ -49,13 +52,15 @@ class BackToIntroPage extends StatelessWidget {
               ),
             ),
           ],
-          
+
           // Phần logo và tiêu đề
           Container(
-            padding: const EdgeInsets.only(bottom: 8), // Padding dưới bằng với trên
+            padding:
+                const EdgeInsets.only(bottom: 8), // Padding dưới bằng với trên
             child: Row(
               children: [
-                const Icon(Icons.grid_view, size: 40, color: Colors.greenAccent),
+                const Icon(Icons.grid_view,
+                    size: 40, color: Colors.greenAccent),
                 const Padding(
                   padding: EdgeInsets.only(left: 10),
                   child: Text(
@@ -72,10 +77,12 @@ class BackToIntroPage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SearchPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const SearchPage()),
                     );
                   },
-                  child: const Icon(Icons.search, color: Colors.white, size: 35),
+                  child:
+                      const Icon(Icons.search, color: Colors.white, size: 35),
                 ),
               ],
             ),
