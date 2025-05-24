@@ -93,6 +93,7 @@ class Story {
       // Kiểm tra trường og_image trong seoOnPage
       if (json.containsKey('seoOnPage') &&
           json['seoOnPage'] is Map<String, dynamic>) {
+        print('hiiiiiiiiiii');
         var seo = json['seoOnPage'];
         if (seo.containsKey('og_image') &&
             seo['og_image'] is List &&
@@ -102,10 +103,12 @@ class Story {
           if (ogImage.startsWith('http')) {
             return ogImage;
           }
-          if (ogImage.startsWith('comics/')) {
-            return '$cdn/uploads/$ogImage';
-          }
-          return '$cdn/uploads/comics/$ogImage';
+          // if (ogImage.startsWith('comics/')) {
+          //   return '$cdn/uploads/$ogImage';
+          // }
+          // return '$cdn/uploads/comics/$ogImage';
+          print('hellllllooooo');
+          return '$cdn/uploads/$ogImage';
         }
       }
 
@@ -129,6 +132,61 @@ class Story {
       print('No thumbnail found in JSON');
       return '';
     }
+
+    // String extractThumbnail(Map<String, dynamic>? json) {
+    //   print('Input JSON: $json'); // Log the entire input
+    //   if (json == null) {
+    //     print('JSON is null');
+    //     return 'https://img.otruyenapi.com/uploads/comics/placeholder.jpg';
+    //   }
+
+    //   final cdn = 'https://img.otruyenapi.com';
+    //   print('Checking thumb_url: ${json.containsKey('thumb_url')}');
+    //   if (json.containsKey('thumb_url') && json['thumb_url'] is String) {
+    //     final thumb = json['thumb_url'] as String;
+    //     print('Found thumb_url: $thumb');
+    //     if (thumb.startsWith('http')) {
+    //       return thumb;
+    //     }
+    //     return '$cdn/uploads/comics/$thumb';
+    //   }
+
+    //   print('Checking seoOnPage: ${json.containsKey('seoOnPage')}');
+    //   if (json.containsKey('seoOnPage') &&
+    //       json['seoOnPage'] is Map<String, dynamic>) {
+    //     final seo = json['seoOnPage'] as Map<String, dynamic>;
+    //     print('seoOnPage: $seo');
+    //     if (seo.containsKey('og_image') &&
+    //         seo['og_image'] is List &&
+    //         seo['og_image'].isNotEmpty) {
+    //       final ogImage = seo['og_image'][0].toString();
+    //       print('Found og_image: $ogImage');
+    //       if (ogImage.startsWith('http')) {
+    //         return ogImage;
+    //       }
+    //       return ogImage.startsWith('comics/')
+    //           ? '$cdn/uploads/$ogImage'
+    //           : '$cdn/uploads/comics/$ogImage';
+    //     }
+    //   }
+
+    //   for (var field in ['thumbnail', 'cover', 'image']) {
+    //     if (json.containsKey(field) && json[field] != null) {
+    //       final thumbUrl = json[field].toString();
+    //       print('Found $field: $thumbUrl');
+    //       if (thumbUrl.startsWith('http')) {
+    //         return thumbUrl;
+    //       } else if (thumbUrl.startsWith('/')) {
+    //         return '$cdn$thumbUrl';
+    //       } else {
+    //         return '$cdn/uploads/comics/$thumbUrl';
+    //       }
+    //     }
+    //   }
+
+    //   print('No thumbnail found in JSON');
+    //   return 'https://img.otruyenapi.com/uploads/comics/placeholder.jpg';
+    // }
 
     // Xử lý trường chapters để đếm số chương
     int countChapters(dynamic chaptersData) {

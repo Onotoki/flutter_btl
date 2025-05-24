@@ -133,9 +133,7 @@ class OTruyenApi {
   // https://otruyenapi.com/v1/api/truyen-tranh/$slug
   // slug (bắt buộc): Định danh truyện
   static Future<Map<String, dynamic>> getComicDetail(String slug) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/truyen-tranh/$slug'),
-    );
+    final response = await http.get(Uri.parse('$baseUrl/truyen-tranh/$slug'));
 
     _logResponse('/truyen-tranh/$slug', response);
 

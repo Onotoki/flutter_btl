@@ -354,6 +354,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                       ),
                       RateAllWidget(
                         idBook: widget.story.id,
+                        title: widget.story.title,
+                        slug: widget.story.slug,
                       ),
                       Divider(),
                       // Chapters list

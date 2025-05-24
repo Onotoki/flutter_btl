@@ -67,13 +67,20 @@ class _CommentState extends State<Comment> {
     // print(currentUid);
   }
 
+  String? uid;
+
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    // TODO: implement initState
+    super.initState();
     final user = FirebaseAuth.instance.currentUser;
-    String? uid;
     if (user != null) {
       uid = user.uid;
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Expanded(
@@ -83,25 +90,28 @@ class _CommentState extends State<Comment> {
               if (snapshot.hasData) {
                 // giữ nguyên snapshot có thể lây ra các id,...
                 final docs = snapshot.data!.docs;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 14),
-                  child: ListView.builder(
-                    // physics: NeverScrollableScrollPhysics(),
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final comment = docs[index];
-                      return CommentWidget(
-                        comment: comment,
-                        rootCommentID: comment.id,
-                        replyFuction: replyFuction,
-                        idBook: widget.idBook,
-                      );
-                    },
-                  ),
-                );
+                if (docs.isEmpty) {
+                  return Center(child: Text('Chưa có bình luận nào'));
+                } else {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0, vertical: 14),
+                    child: ListView.builder(
+                      // physics: NeverScrollableScrollPhysics(),
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final comment = docs[index];
+                        return CommentWidget(
+                          comment: comment,
+                          rootCommentID: comment.id,
+                          replyFuction: replyFuction,
+                          idBook: widget.idBook,
+                        );
+                      },
+                    ),
+                  );
+                }
               }
-              print('không có dữ liệu');
               return Center(
                 child: CircularProgressIndicator(),
               );
@@ -126,7 +136,7 @@ class _CommentState extends State<Comment> {
                   if (commentController.text.isNotEmpty && uid != null) {
                     if (rootCommentID != null) {
                       addComment(
-                          userID: 'vu',
+                          userID: uid!,
                           bookID: widget.idBook,
                           content: '@$userTag ${commentController.text}',
                           parentID: rootCommentID);
@@ -140,7 +150,7 @@ class _CommentState extends State<Comment> {
                       });
                     } else {
                       addComment(
-                        userID: 'vu',
+                        userID: uid!,
                         bookID: widget.idBook,
                         content: commentController.text,
                       );
