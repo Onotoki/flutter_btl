@@ -96,7 +96,7 @@ class _ChapterPageState extends State<ChapterPage> {
       await getData(uid!);
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (_scrollController.hasClients && indexChapter > 0) {
-          print('_scrollController $indexChapter');
+          print('Đã gán được _scrollController $indexChapter');
           _restoreScrollPosition(indexChapter);
           _scrollController.addListener(_updateScrollPercentage);
         } else {
@@ -112,8 +112,8 @@ class _ChapterPageState extends State<ChapterPage> {
     int chapterNumber,
     double newProgress,
   ) {
-    final progress =
-        ((sum + newProgress) / widget.chapterTotal).toStringAsFixed(2);
+    final rawProgress = (sum + newProgress) / widget.chapterTotal;
+    final progress = double.parse(rawProgress.toStringAsFixed(2));
 
     if (isFirebase == false) {
       print('chạy hàm tạo mới');
@@ -128,6 +128,7 @@ class _ChapterPageState extends State<ChapterPage> {
         'slug': widget.storySlug,
         'isfavorite': false,
         'isreading': true,
+        'id_book': widget.idBook,
         'totals_chapter': widget.chapterTotal
       });
     } else if (isFirebase) {

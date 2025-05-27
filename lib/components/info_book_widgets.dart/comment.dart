@@ -11,18 +11,22 @@ class Comment extends StatefulWidget {
 }
 
 class _CommentState extends State<Comment> {
+  String? userName;
   Future<void> addComment({
+    required String userName,
     required String userID,
     required String bookID,
     String? parentID,
     required String content,
   }) async {
+    print('Chạy hàm add comemnt');
     await FirebaseFirestore.instance
         .collection('books')
         .doc(bookID)
         .collection('comments')
         .add(
       {
+        'userName': userName,
         'userID': userID,
         'parentID': parentID,
         'content': content,
@@ -54,13 +58,31 @@ class _CommentState extends State<Comment> {
     }
   }
 
+  Future<void> getNameUser(String id) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(id)
+        .get()
+        .then((DocumentSnapshot documentSnapshot) {
+      if (documentSnapshot.exists) {
+        print('Document data: ${documentSnapshot.data()}');
+
+        final data = documentSnapshot.data() as Map<String, dynamic>;
+        userName = data['nickname'];
+        print('username: ${data['nickname']}');
+      } else {
+        print('Document does not exist on the database');
+      }
+    });
+  }
+
   String? userTag;
   String? rootCommentID;
   TextEditingController commentController = TextEditingController();
 
   void replyFuction(QueryDocumentSnapshot comment) {
     setState(() {
-      userTag = comment['userID'];
+      userTag = comment['userName'];
       rootCommentID = comment.id;
       commentController.text = ' ';
     });
@@ -76,6 +98,12 @@ class _CommentState extends State<Comment> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       uid = user.uid;
+      if (user.email != null) {
+        getNameUser(user.email!);
+      } else {
+        getNameUser(user.phoneNumber!);
+      }
+      // print('email user: ${user.displayName}');
     }
   }
 
@@ -134,8 +162,10 @@ class _CommentState extends State<Comment> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (value) async {
                   if (commentController.text.isNotEmpty && uid != null) {
+                    print('object1');
                     if (rootCommentID != null) {
                       addComment(
+                          userName: userName!,
                           userID: uid!,
                           bookID: widget.idBook,
                           content: '@$userTag ${commentController.text}',
@@ -148,12 +178,15 @@ class _CommentState extends State<Comment> {
                           .update({
                         'replyCount': FieldValue.increment(1),
                       });
+                      print('object12');
                     } else {
                       addComment(
+                        userName: userName!,
                         userID: uid!,
                         bookID: widget.idBook,
                         content: commentController.text,
                       );
+                      print('object13');
                     }
                     setState(() {
                       commentController.clear();
@@ -344,7 +377,7 @@ class _CommentWidgetState extends State<CommentWidget> {
                       Row(
                         children: [
                           Text(
-                            comment['userID'],
+                            comment['userName'],
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           SizedBox(
@@ -369,7 +402,10 @@ class _CommentWidgetState extends State<CommentWidget> {
                                   ),
                                   TextSpan(
                                       text: remainingContent,
-                                      style: TextStyle(color: Colors.grey)),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface)),
                                 ],
                               ),
                             )

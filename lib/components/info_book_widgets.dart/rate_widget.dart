@@ -71,6 +71,7 @@ class _RateAllWidgetState extends State<RateAllWidget> {
           'slug': slug,
           'isfavorite': newFavoriteStatus,
           'isreading': false,
+          'id_book': widget.idBook,
           'totals_chapter': widget.totalChapter,
         });
       }
@@ -150,7 +151,7 @@ class _RateAllWidgetState extends State<RateAllWidget> {
         // Lấy điểm và số lượng đánh giá
         final data = snapshot.data!.data() as Map<String, dynamic>?;
         final currentRate = data?['rate'] ?? 0;
-        final countRate = data?['counts'] ?? 0;
+        final countRate = data?['count'] ?? 0;
 
         return Row(
           children: [
@@ -222,20 +223,16 @@ class _RateAllWidgetState extends State<RateAllWidget> {
                       Positioned(
                         top: 0,
                         left: currentRate != 0 ? 90 : -1000,
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                  color: Colors.transparent, width: 0.0),
-                            ),
-                            shape: BoxShape.circle,
-                            color: Colors.green,
-                          ),
-                          child: Text(
-                            currentRate.toString(),
-                            style: const TextStyle(color: Colors.white),
+                        child: ClipOval(
+                          child: Container(
+                            width: 32,
+                            height: 30,
+                            // padding: const EdgeInsets.all(3),
+
+                            color: Colors.deepOrange,
+                            child: Center(
+                                child: Text('$currentRate',
+                                    style: TextStyle(color: Colors.white))),
                           ),
                         ),
                       ),

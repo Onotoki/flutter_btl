@@ -79,6 +79,7 @@ class _RatingSelectorState extends State<RatingSelector> {
     required String bookID,
     required double oldTotal,
     required int newRating,
+    required int indexRate,
     required int oldCount,
   }) async {
     await FirebaseFirestore.instance
@@ -88,7 +89,7 @@ class _RatingSelectorState extends State<RatingSelector> {
         .add(
       {
         'user_id': userID,
-        'user_rate': newRating,
+        'user_rate': indexRate,
       },
     );
     final newCount = oldCount + 1;
@@ -125,8 +126,8 @@ class _RatingSelectorState extends State<RatingSelector> {
                   (index) {
                     final item = items[index];
                     return RateWidget(
-                      isSelected: (selectedIndex == index) ||
-                          (isRate && selectedIndex == index),
+                      isSelected: ((selectedIndex == index) ||
+                          (isRate && selectedIndex == index)),
                       onTap: () {
                         if (!isRate) {
                           setState(() {
@@ -155,12 +156,13 @@ class _RatingSelectorState extends State<RatingSelector> {
               foregroundColor: Colors.white,
               flex: 1,
               ontap: () {
-                if (selectedIndex != null && uid != null) {
+                if (selectedIndex != null && uid != null && isRate == false) {
                   final itemIcon = items[selectedIndex!];
                   _rate(
                     userID: uid!,
                     bookID: widget.idBook,
                     newRating: itemIcon['point'],
+                    indexRate: selectedIndex!,
                     oldTotal: widget.currentRate,
                     oldCount: widget.countRate,
                   );

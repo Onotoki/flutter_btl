@@ -16,7 +16,10 @@ class BookPage extends StatefulWidget {
   State<BookPage> createState() => _BookPageState();
 }
 
-class _BookPageState extends State<BookPage> {
+class _BookPageState extends State<BookPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final Map<String, List<Story>> _categories = {
     'Truyện mới cập nhật': [],
     'Đang phát hành': [],

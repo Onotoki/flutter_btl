@@ -1,3 +1,4 @@
+import 'package:btl/components/info_book_widgets.dart/button_info.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,19 @@ import 'package:btl/models/story.dart';
 import 'package:btl/pages/story_detail_page.dart';
 import 'package:btl/pages/categories_page.dart';
 import 'package:flutter/services.dart';
+
+// Define a class to represent the state of slug data from Firebase
+class SlugDataState {
+  final Map<String, List<String>> slug;
+  final Map<String, double> progressMap; // Map slug to progress
+  final Map<String, String> idBook; // Map slug to progress
+
+  SlugDataState({
+    required this.slug,
+    required this.idBook,
+    required this.progressMap,
+  });
+}
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -23,53 +37,102 @@ class _LibraryPageState extends State<LibraryPage> {
 
   bool _isLoading = true;
   String _errorMessage = '';
+  Map<String, double> _progressMap = {}; // Map slug to progress
+  Map<String, String> _idBookMap = {}; // Map slug to progress
+  String? uid;
   String _debugInfo = '';
-  List<double> progressRead = [];
+  bool hasReading = false;
+  bool hasFavorite = false;
 
-  Future<Map<String, List<String>>> getSlug(String uid) async {
-    Map<String, List<String>> slug = {
-      'Đang đọc': [],
-      'Yêu thích': [],
-    };
-    await FirebaseFirestore.instance
+  // Convert getSlug to Stream
+  Stream<SlugDataState> getSlug(String uid) {
+    print("uid $uid");
+    return FirebaseFirestore.instance
         .collection('user_reading')
         .doc(uid)
         .collection('books_of_user')
-        .get()
-        .then((QuerySnapshot querySnapshot) {
-      querySnapshot.docs.forEach((doc) {
+        .snapshots()
+        .map((QuerySnapshot querySnapshot) {
+      Map<String, List<String>> slug = {
+        'Đang đọc': [],
+        'Yêu thích': [],
+      };
+      Map<String, double> progressMap = {};
+      Map<String, String> idBook = {};
+
+      for (var doc in querySnapshot.docs) {
+        String docSlug = doc['slug'];
         if (doc['isreading'] == true) {
-          slug['Đang đọc']!.add(doc['slug']);
-          progressRead.add(doc['process']);
-        } else {
-          slug['Yêu thích']!.add(doc['slug']);
+          slug['Đang đọc']!.add(docSlug);
+          progressMap[docSlug] = doc['process']?.toDouble() ?? 0.0;
+          idBook[docSlug] = doc['id_book'];
         }
-        // print('du lieu tu slug: ${doc["slug"]}');
+        if (doc['isfavorite'] == true) {
+          slug['Yêu thích']!.add(docSlug);
+        }
+      }
+
+      print('Stream emitted: slug=$slug, progressMap=$progressMap');
+      return SlugDataState(
+          slug: slug, progressMap: progressMap, idBook: idBook);
+    }).handleError((e) {
+      print('Lỗi khi lấy dữ liệu Firebase: $e');
+      return SlugDataState(
+          slug: {'Đang đọc': [], 'Yêu thích': []}, progressMap: {}, idBook: {});
+    });
+  }
+
+  Future<void> deleteSlug(String idBook) async {
+    FirebaseFirestore.instance
+        .collection('user_reading')
+        .doc(uid)
+        .collection('books_of_user')
+        .doc(idBook)
+        .delete();
+  }
+
+  void getData() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Chưa đăng nhập';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    uid = user.uid;
+    getSlug(uid!).listen((SlugDataState state) {
+      // Only reload comics if slugs have changed
+      bool slugsChanged = _categories['Đang đọc']!.length !=
+              state.slug['Đang đọc']!.length ||
+          _categories['Yêu thích']!.length != state.slug['Yêu thích']!.length ||
+          !_categories['Đang đọc']!
+              .every((story) => state.slug['Đang đọc']!.contains(story.slug)) ||
+          !_categories['Yêu thích']!
+              .every((story) => state.slug['Yêu thích']!.contains(story.slug));
+
+      setState(() {
+        _progressMap = state.progressMap;
+        _idBookMap = state.idBook;
+        if (slugsChanged && state.slug.isNotEmpty) {
+          _isLoading = true;
+          _loadMultipleComics(state.slug['Đang đọc']!, 'Đang đọc');
+          _loadMultipleComics(state.slug['Yêu thích']!, 'Yêu thích');
+        } else if (state.slug['Đang đọc']!.isEmpty &&
+            state.slug['Yêu thích']!.isEmpty) {
+          _isLoading = false;
+          _categories['Đang đọc'] = [];
+          _categories['Yêu thích'] = [];
+        }
+      });
+    }, onError: (e) {
+      setState(() {
+        _errorMessage = 'Không thể tải danh sách slug: $e';
+        _isLoading = false;
+        _debugInfo = 'Lỗi khi tải slug: $e';
       });
     });
-    return slug;
-  }
-
-  String? uid;
-  void getdata() async {
-    Map<String, List<String>> listSlug = await getSlug(uid!);
-    if (listSlug.isNotEmpty) {
-      print('co du lieu $listSlug');
-      _loadMultipleComics(listSlug['Đang đọc']!, 'Đang đọc');
-      _loadMultipleComics(listSlug['Yêu thích']!, 'Yêu thích');
-    } else {
-      print('mang rong');
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      uid = user.uid;
-    }
-    getdata();
   }
 
   Future<Story?> _loadHomeData(String slug) async {
@@ -105,7 +168,8 @@ class _LibraryPageState extends State<LibraryPage> {
       _debugInfo = '';
     });
 
-    final debugLogs = StringBuffer('Đang lấy tất cả dữ liệu danh mục...\n');
+    final debugLogs =
+        StringBuffer('Đang lấy tất cả dữ liệu danh mục $category...\n');
     final List<Story> stories = [];
 
     try {
@@ -126,10 +190,10 @@ class _LibraryPageState extends State<LibraryPage> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Không thể tải dữ liệu trang chủ: $e';
+        _errorMessage = 'Không thể tải dữ liệu danh mục $category: $e';
         _isLoading = false;
         _debugInfo = debugLogs.toString();
-        print('Lỗi khi tải dữ liệu trang chủ: $e');
+        print('Lỗi khi tải dữ liệu danh mục $category: $e');
       });
     }
   }
@@ -141,48 +205,21 @@ class _LibraryPageState extends State<LibraryPage> {
       return null;
     }
     try {
-      // Handle single comic from getComicDetail
-      if (result != null && result is Map<String, dynamic>) {
-        print('result.containsKey: $result');
-        // final data = result['data'] as Map<String, dynamic>;
-        if (result.containsKey('item') &&
-            result['item'] is Map<String, dynamic>) {
-          debugLogs.write('Parsing single item: ${result['item']}\n');
-          return Story.fromJson(result['item']);
-        } else {
-          debugLogs.write('No item found in data\n');
-        }
-      }
-      // Handle list of comics
-      else if (result.containsKey('data') && result['data'] is Map) {
-        return _parseStories(result['data']);
-        // print('json11 data: $stories');
-      } else if (result.containsKey('items') && result['items'] is Map) {
-        // print('json11 item: $stories');
-        return _parseStories(result['items']);
+      if (result.containsKey('item') &&
+          result['item'] is Map<String, dynamic>) {
+        debugLogs.write('Parsing single item: ${result['item']}\n');
+        return Story.fromJson(result['item']);
       } else {
-        // result.forEach((key, value) {
-        //   if (value is List && stories.isEmpty) {
-        //     debugLogs.write('Parsing list from key: $key\n');
-        //     print('json11 foreach: $value');
-        //     return _parseStories(value);
-
-        //   }
-        // });
-        return null;
+        debugLogs.write('No item found in data\n');
       }
     } catch (e) {
       debugLogs.write('Lỗi khi phân tích dữ liệu truyện: $e\n');
     }
-
-    // debugLogs.write('Parsed ${stories.length} stories\n');
     return null;
   }
 
   Story? _parseStories(dynamic data) {
-    // List<Story> stories = [];
     if (data == null) {
-      // debugLogs.write('Dữ liệu API là null\n');
       return null;
     }
     try {
@@ -198,21 +235,16 @@ class _LibraryPageState extends State<LibraryPage> {
         for (var item in data) {
           try {
             if (item is Map<String, dynamic>) {
-              // stories.add(Story.fromJson(item));
-
-              // print('Dữ liệu lấy ảnh $item');
-              return (Story.fromJson(item));
+              return Story.fromJson(item);
             }
           } catch (e) {
             print('Error parsing story item: $e, item: $item');
           }
         }
-        // print('Successfully parsed ${stories.length} stories');
       }
     } catch (e) {
       print('Error parsing stories data: $e');
     }
-
     return null;
   }
 
@@ -254,7 +286,11 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
-  Widget _buildHorizontalStoryList(List<Story> stories) {
+  Widget _buildHorizontalStoryList(List<Story> stories, String type) {
+    double a = 15;
+    if (type != 'Đang đọc') {
+      a = -100;
+    }
     return SizedBox(
       height: 220,
       child: stories.isEmpty
@@ -263,16 +299,18 @@ class _LibraryPageState extends State<LibraryPage> {
               scrollDirection: Axis.horizontal,
               itemCount: stories.length,
               itemBuilder: (context, index) {
+                final story = stories[index];
+                final progress = _progressMap[story.slug] ?? 0.0;
+                final idBook = _idBookMap[story.slug] ?? '';
                 return Stack(
                   children: [
                     StoryTile(
-                      story: stories[index],
+                      story: story,
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                StoryDetailPage(story: stories[index]),
+                            builder: (context) => StoryDetailPage(story: story),
                           ),
                         );
                       },
@@ -282,35 +320,67 @@ class _LibraryPageState extends State<LibraryPage> {
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                                content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(stories[index].title),
-                                ElevatedButton(
-                                    onPressed: () {}, child: Text('Xoá truyện'))
-                              ],
-                            ));
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    story.title,
+                                    style: TextStyle(fontSize: 20),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Row(
+                                    children: [
+                                      Button_Info(
+                                        text: 'Xoá truyện',
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        flex: 1,
+                                        ontap: () {
+                                          deleteSlug(idBook);
+                                          Navigator.pop(context);
+                                        },
+                                      ),
+                                    ],
+                                  )
+                                ],
+                              ),
+                            );
                           },
                         );
                       },
                     ),
                     Positioned(
                       top: 10,
-                      left: 15,
+                      left: a,
                       child: Container(
                         padding:
                             EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(4)),
-                        child: Center(child: Text('${progressRead[index]}%')),
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${progress.toStringAsFixed(2)}%',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
                       ),
-                    )
+                    ),
                   ],
                 );
               },
             ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    print('chạy init');
+    getData();
   }
 
   @override
@@ -327,7 +397,8 @@ class _LibraryPageState extends State<LibraryPage> {
                         for (var category in _categories.entries) ...[
                           _buildSectionTitle(
                               context, category.key, category.value),
-                          _buildHorizontalStoryList(category.value),
+                          _buildHorizontalStoryList(
+                              category.value, category.key),
                         ],
                       ],
                     ),

@@ -1,6 +1,7 @@
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
 import 'package:btl/components/info_book_widgets.dart/rate_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
@@ -33,33 +34,27 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
   String storyDescription = '';
   Map? currentIndex;
 
-  Future<void>? getData(
-    String uid,
-  ) {
-    FirebaseFirestore.instance
-        .collection('user_reading')
-        .doc(uid)
-        .collection('books_of_user')
-        .doc(widget.story.id)
-        .get()
-        .then((DocumentSnapshot documentSnapshot) {
-      if (documentSnapshot.exists) {
-        final data = documentSnapshot.data() as Map;
-        currentIndex = data['chapters_reading'] as Map;
-        print('currentIndex $currentIndex');
-      } else {
-        print('Document does not exist on the database');
-      }
-    });
-    return null;
-  }
+  String? uid;
 
+  late final Stream<DocumentSnapshot<Map<String, dynamic>>>? docStream;
   @override
   void initState() {
     super.initState();
     storyDescription = widget.story.description; // Lưu mô tả ban đầu
     _loadComicDetail();
-    getData('BVJnGXYhSnMIfueXqss4vwRjojd2');
+    // getData('BVJnGXYhSnMIfueXqss4vwRjojd2');
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      uid = user.uid;
+    }
+    docStream = uid != null
+        ? FirebaseFirestore.instance
+            .collection('user_reading')
+            .doc(uid)
+            .collection('books_of_user')
+            .doc(widget.story.id)
+            .snapshots()
+        : const Stream.empty();
   }
 
   Future<void> _loadComicDetail() async {
@@ -239,7 +234,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                   // Hiển thị tác giả
                                   if (widget.story.authors.isNotEmpty)
                                     Text(
-                                        'Tác giả: ${widget.story.authors.join(", ")}'),
+                                      'Tác giả: ${widget.story.authors.join(", ")}',
+                                    ),
 
                                   Text('Lượt xem: ${widget.story.views}'),
                                   Text('Trạng thái: ${widget.story.status}'),
@@ -272,6 +268,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                           ],
                         ),
                       ),
+
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
@@ -284,16 +281,14 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                               flex: 3,
                               ontap: () {},
                             ),
-                            const SizedBox(
-                              width: 10,
-                            ),
+                            const SizedBox(width: 10),
                             Button_Info(
                               text: 'Chương',
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.green,
                               flex: 2,
                               ontap: () {},
-                            )
+                            ),
                           ],
                         ),
                       ),
@@ -372,22 +367,20 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                   style: TextStyle(color: Colors.green[300]),
                                 ),
                               ),
-                            )
+                            ),
                           ],
                         ),
                       ),
+
                       RateAllWidget(
                         idBook: widget.story.id,
                         title: widget.story.title,
                         slug: widget.story.slug,
                         totalChapter: chapters.length,
                       ),
-                      Divider(
-                        thickness: 0.5,
-                      ),
-                      // Chapters list
-                      // Danh sách chương dạng Grid
+                      const Divider(thickness: 0.5),
 
+                      // Chapters list
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -401,9 +394,13 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                               ),
                             ),
                             const SizedBox(height: 8),
+
+                            // 1) Nếu không có chương nào
                             if (chapters.isEmpty)
-                              const Center(child: Text('Không có chương nào'))
-                            else
+                              const Center(child: Text('Không có chương nào')),
+
+                            // 2) Nếu có chương và chưa đăng nhập ⇒ GridView bình thường
+                            if (uid == null)
                               GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
@@ -419,14 +416,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                   final chapter = chapters[index];
                                   final chapterTitle =
                                       _getChapterTitle(chapter);
-                                  final double progress =
-                                      currentIndex != null &&
-                                              currentIndex!
-                                                  .containsKey('${index + 1}')
-                                          ? currentIndex!['${index + 1}'] ?? 0
-                                          : 0;
-                                  final double fraction = progress / 100;
-                                  // print('process $process');
 
                                   return GestureDetector(
                                     onTap: () {
@@ -459,31 +448,133 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     },
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Stack(
-                                        children: [
-                                          Container(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary),
-                                          FractionallySizedBox(
-                                            widthFactor: fraction,
-                                            alignment: Alignment.centerLeft,
-                                            child:
-                                                Container(color: Colors.green),
-                                          ),
-                                          Center(
-                                            child: Text(
-                                              chapterTitle,
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                // color: Colors.grey,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
+                                      child: Container(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        child: Center(
+                                          child: Text(
+                                            chapterTitle,
+                                            style: const TextStyle(
+                                              fontSize: 13,
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     ),
+                                  );
+                                },
+                              ),
+
+                            if (uid != null)
+                              StreamBuilder<DocumentSnapshot>(
+                                stream: docStream,
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasError) {
+                                    return const Center(
+                                        child: Text('Something went wrong'));
+                                  }
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  }
+
+                                  final raw = snapshot.data?.data()
+                                          as Map<String, dynamic>? ??
+                                      {};
+                                  final reading =
+                                      (raw['chapters_reading'] is Map)
+                                          ? Map<String, double>.from(
+                                              raw['chapters_reading'])
+                                          : <String, double>{};
+
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: chapters.length,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      mainAxisSpacing: 6,
+                                      crossAxisSpacing: 6,
+                                      mainAxisExtent: 40,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final chapter = chapters[index];
+                                      final chapterTitle =
+                                          _getChapterTitle(chapter);
+                                      double fraction = 0.0;
+                                      if (reading != null) {
+                                        final progress =
+                                            reading['${index + 1}'] ?? 0.0;
+                                        fraction = progress / 100.0;
+                                      }
+
+                                      return GestureDetector(
+                                        onTap: () {
+                                          if (chapter.apiData.isNotEmpty) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    ChapterPage(
+                                                  storySlug: widget.story.slug,
+                                                  chapterTotal: chapters.length,
+                                                  chapterApiData:
+                                                      chapter.apiData,
+                                                  idBook: widget.story.id,
+                                                  chapterTitle:
+                                                      chapter.title.isNotEmpty
+                                                          ? chapter.title
+                                                          : chapter.name,
+                                                  chapterNumber:
+                                                      _getChapterNumber(
+                                                          chapter.name),
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Không thể đọc chương này')),
+                                            );
+                                          }
+                                        },
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: Stack(
+                                            children: [
+                                              Container(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary),
+                                              FractionallySizedBox(
+                                                widthFactor: fraction,
+                                                alignment: Alignment.centerLeft,
+                                                child: Container(
+                                                    color: Colors.green),
+                                              ),
+                                              Center(
+                                                child: Text(
+                                                  chapterTitle,
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -493,8 +584,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                     ],
                   ),
                 ),
-    );
-  }
+    ); // end Scaffold
+  } // end build
 
   // Helper method để tạo tiêu đề chương
   String _getChapterTitle(Chapter chapter) {
