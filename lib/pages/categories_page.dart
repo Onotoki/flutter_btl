@@ -112,6 +112,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Widget _buildCategoryCard(Category category) {
     return Card(
       elevation: 2,
+      color: Theme.of(context).colorScheme.primary,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -123,25 +124,27 @@ class _CategoriesPageState extends State<CategoriesPage> {
         },
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                category.name,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+          child: Container(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  category.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                '${category.stories} truyện',
-                style: TextStyle(
-                  color: Colors.grey[600],
+                const SizedBox(height: 5),
+                Text(
+                  '${category.stories} truyện',
+                  style: TextStyle(
+                    color: Colors.grey,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

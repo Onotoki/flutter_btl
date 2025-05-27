@@ -1,5 +1,6 @@
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
 import 'package:btl/components/info_book_widgets.dart/rate_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
@@ -30,12 +31,35 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
   List<Chapter> chapters = [];
   String debugInfo = '';
   String storyDescription = '';
+  Map? currentIndex;
+
+  Future<void>? getData(
+    String uid,
+  ) {
+    FirebaseFirestore.instance
+        .collection('user_reading')
+        .doc(uid)
+        .collection('books_of_user')
+        .doc(widget.story.id)
+        .get()
+        .then((DocumentSnapshot documentSnapshot) {
+      if (documentSnapshot.exists) {
+        final data = documentSnapshot.data() as Map;
+        currentIndex = data['chapters_reading'] as Map;
+        print('currentIndex $currentIndex');
+      } else {
+        print('Document does not exist on the database');
+      }
+    });
+    return null;
+  }
 
   @override
   void initState() {
     super.initState();
     storyDescription = widget.story.description; // Lưu mô tả ban đầu
     _loadComicDetail();
+    getData('BVJnGXYhSnMIfueXqss4vwRjojd2');
   }
 
   Future<void> _loadComicDetail() async {
@@ -329,7 +353,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                                   fontWeight: FontWeight.bold),
                                             ),
                                             const SizedBox(height: 10),
-                                            Divider(),
+                                            const Divider(thickness: 0.3),
                                             Text(
                                               storyDescription.isNotEmpty
                                                   ? storyDescription
@@ -356,8 +380,11 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                         idBook: widget.story.id,
                         title: widget.story.title,
                         slug: widget.story.slug,
+                        totalChapter: chapters.length,
                       ),
-                      Divider(),
+                      Divider(
+                        thickness: 0.5,
+                      ),
                       // Chapters list
                       // Danh sách chương dạng Grid
 
@@ -379,19 +406,27 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                             else
                               GridView.builder(
                                 shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
+                                physics: const NeverScrollableScrollPhysics(),
                                 itemCount: chapters.length,
                                 gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
                                   mainAxisSpacing: 6,
                                   crossAxisSpacing: 6,
-                                  mainAxisExtent: 40, // chiều cao mỗi ô
+                                  mainAxisExtent: 40,
                                 ),
                                 itemBuilder: (context, index) {
                                   final chapter = chapters[index];
-                                  final chapterTitle = _getChapterTitle(
-                                      chapter); // ví dụ: 'Chương 1'
+                                  final chapterTitle =
+                                      _getChapterTitle(chapter);
+                                  final double progress =
+                                      currentIndex != null &&
+                                              currentIndex!
+                                                  .containsKey('${index + 1}')
+                                          ? currentIndex!['${index + 1}'] ?? 0
+                                          : 0;
+                                  final double fraction = progress / 100;
+                                  // print('process $process');
 
                                   return GestureDetector(
                                     onTap: () {
@@ -401,7 +436,9 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                           MaterialPageRoute(
                                             builder: (context) => ChapterPage(
                                               storySlug: widget.story.slug,
+                                              chapterTotal: chapters.length,
                                               chapterApiData: chapter.apiData,
+                                              idBook: widget.story.id,
                                               chapterTitle:
                                                   chapter.title.isNotEmpty
                                                       ? chapter.title
@@ -420,19 +457,31 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                         );
                                       }
                                     },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          chapterTitle,
-                                          style: TextStyle(fontSize: 13),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Stack(
+                                        children: [
+                                          Container(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary),
+                                          FractionallySizedBox(
+                                            widthFactor: fraction,
+                                            alignment: Alignment.centerLeft,
+                                            child:
+                                                Container(color: Colors.green),
+                                          ),
+                                          Center(
+                                            child: Text(
+                                              chapterTitle,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                // color: Colors.grey,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   );

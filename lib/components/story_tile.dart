@@ -4,11 +4,13 @@ import 'package:btl/models/story.dart';
 class StoryTile extends StatelessWidget {
   final Story story;
   final Function()? onTap;
+  final Function()? onLongPress;
 
   const StoryTile({
     super.key,
     required this.story,
     this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -19,6 +21,7 @@ class StoryTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10, left: 15),
       child: GestureDetector(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           width: size.width,
           decoration: BoxDecoration(

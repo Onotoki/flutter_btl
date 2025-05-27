@@ -79,6 +79,7 @@ class Story {
     // Trích xuất thumbnail với nhiều tên trường có thể có
     String extractThumbnail(Map<String, dynamic> json) {
       final cdn = 'https://img.otruyenapi.com';
+      print('Chạy hàm lấy ảnh');
 
       // Kiểm tra trường thumb_url (cấu trúc chuẩn của API)
       if (json.containsKey('thumb_url') && json['thumb_url'] is String) {
@@ -103,10 +104,7 @@ class Story {
           if (ogImage.startsWith('http')) {
             return ogImage;
           }
-          // if (ogImage.startsWith('comics/')) {
-          //   return '$cdn/uploads/$ogImage';
-          // }
-          // return '$cdn/uploads/comics/$ogImage';
+
           print('hellllllooooo');
           return '$cdn/uploads/$ogImage';
         }
@@ -129,29 +127,32 @@ class Story {
         }
       }
 
-      print('No thumbnail found in JSON');
+      // print('No thumbnail found in JSON');
       return '';
     }
 
     // String extractThumbnail(Map<String, dynamic>? json) {
-    //   print('Input JSON: $json'); // Log the entire input
+    //   print('extractThumbnail input: $json');
     //   if (json == null) {
     //     print('JSON is null');
     //     return 'https://img.otruyenapi.com/uploads/comics/placeholder.jpg';
     //   }
 
     //   final cdn = 'https://img.otruyenapi.com';
-    //   print('Checking thumb_url: ${json.containsKey('thumb_url')}');
-    //   if (json.containsKey('thumb_url') && json['thumb_url'] is String) {
-    //     final thumb = json['thumb_url'] as String;
-    //     print('Found thumb_url: $thumb');
-    //     if (thumb.startsWith('http')) {
-    //       return thumb;
+
+    //   // Check thumbnail fields
+    //   for (var key in ['thumb_url', 'thumbnail_url', 'thumbnail']) {
+    //     if (json.containsKey(key) && json[key] is String) {
+    //       final thumb = json[key] as String;
+    //       print('Found $key: $thumb');
+    //       if (thumb.startsWith('http')) {
+    //         return thumb;
+    //       }
+    //       return '$cdn/uploads/comics/$thumb';
     //     }
-    //     return '$cdn/uploads/comics/$thumb';
     //   }
 
-    //   print('Checking seoOnPage: ${json.containsKey('seoOnPage')}');
+    //   // Check seoOnPage.og_image
     //   if (json.containsKey('seoOnPage') &&
     //       json['seoOnPage'] is Map<String, dynamic>) {
     //     final seo = json['seoOnPage'] as Map<String, dynamic>;
@@ -170,7 +171,8 @@ class Story {
     //     }
     //   }
 
-    //   for (var field in ['thumbnail', 'cover', 'image']) {
+    //   // Check fallback fields
+    //   for (var field in ['cover', 'image']) {
     //     if (json.containsKey(field) && json[field] != null) {
     //       final thumbUrl = json[field].toString();
     //       print('Found $field: $thumbUrl');
