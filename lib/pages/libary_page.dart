@@ -12,13 +12,13 @@ import 'package:flutter/services.dart';
 // Define a class to represent the state of slug data from Firebase
 class SlugDataState {
   final Map<String, List<String>> slug;
-  final Map<String, double> progressMap; // Map slug to progress
-  final Map<String, String> idBook; // Map slug to progress
+  Map<String, double>? progressMap; // Map slug to progress
+  Map<String, String> idBook; // Map slug to progress
 
   SlugDataState({
     required this.slug,
     required this.idBook,
-    required this.progressMap,
+    this.progressMap,
   });
 }
 
@@ -38,55 +38,58 @@ class _LibraryPageState extends State<LibraryPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   Map<String, double> _progressMap = {}; // Map slug to progress
-  Map<String, String> _idBookMap = {}; // Map slug to progress
+  Map<String, String> _idBookMap = {};
   String? uid;
   String _debugInfo = '';
   bool hasReading = false;
   bool hasFavorite = false;
 
   // Convert getSlug to Stream
-  Stream<SlugDataState> getSlug(String uid) {
-    print("uid $uid");
+  Stream<SlugDataState> getSlugData(String uid, {required bool isReading}) {
+    print("uid $uid, isReading: $isReading");
+    final collectionName = isReading ? 'books_reading' : 'books_favorite';
+    final slugKey = isReading ? 'Đang đọc' : 'Yêu thích';
+
     return FirebaseFirestore.instance
         .collection('user_reading')
         .doc(uid)
-        .collection('books_of_user')
+        .collection(collectionName)
         .snapshots()
         .map((QuerySnapshot querySnapshot) {
-      Map<String, List<String>> slug = {
-        'Đang đọc': [],
-        'Yêu thích': [],
-      };
-      Map<String, double> progressMap = {};
+      Map<String, List<String>> slug = {slugKey: []};
+      Map<String, double>? progressMap = isReading ? {} : null;
       Map<String, String> idBook = {};
 
       for (var doc in querySnapshot.docs) {
         String docSlug = doc['slug'];
-        if (doc['isreading'] == true) {
-          slug['Đang đọc']!.add(docSlug);
-          progressMap[docSlug] = doc['process']?.toDouble() ?? 0.0;
-          idBook[docSlug] = doc['id_book'];
-        }
-        if (doc['isfavorite'] == true) {
-          slug['Yêu thích']!.add(docSlug);
+        slug[slugKey]!.add(docSlug);
+        idBook[docSlug] = doc['id_book'];
+        if (isReading) {
+          progressMap![docSlug] = doc['process']?.toDouble() ?? 0.0;
         }
       }
 
       print('Stream emitted: slug=$slug, progressMap=$progressMap');
       return SlugDataState(
-          slug: slug, progressMap: progressMap, idBook: idBook);
+        slug: slug,
+        progressMap: isReading ? progressMap : {},
+        idBook: idBook,
+      );
     }).handleError((e) {
       print('Lỗi khi lấy dữ liệu Firebase: $e');
       return SlugDataState(
-          slug: {'Đang đọc': [], 'Yêu thích': []}, progressMap: {}, idBook: {});
+        slug: {slugKey: []},
+        progressMap: isReading ? {} : {},
+        idBook: {},
+      );
     });
   }
 
-  Future<void> deleteSlug(String idBook) async {
+  Future<void> deleteSlug(String idBook, String subCollection) async {
     FirebaseFirestore.instance
         .collection('user_reading')
         .doc(uid)
-        .collection('books_of_user')
+        .collection(subCollection)
         .doc(idBook)
         .delete();
   }
@@ -102,35 +105,67 @@ class _LibraryPageState extends State<LibraryPage> {
     }
 
     uid = user.uid;
-    getSlug(uid!).listen((SlugDataState state) {
-      // Only reload comics if slugs have changed
+
+    // Lắng nghe Stream cho books_reading (Đang đọc)
+    getSlugData(uid!, isReading: true).listen((SlugDataState state) {
       bool slugsChanged = _categories['Đang đọc']!.length !=
               state.slug['Đang đọc']!.length ||
-          _categories['Yêu thích']!.length != state.slug['Yêu thích']!.length ||
           !_categories['Đang đọc']!
-              .every((story) => state.slug['Đang đọc']!.contains(story.slug)) ||
-          !_categories['Yêu thích']!
-              .every((story) => state.slug['Yêu thích']!.contains(story.slug));
+              .every((story) => state.slug['Đang đọc']!.contains(story.slug));
 
       setState(() {
-        _progressMap = state.progressMap;
-        _idBookMap = state.idBook;
-        if (slugsChanged && state.slug.isNotEmpty) {
+        _progressMap = state.progressMap!;
+        _idBookMap = {
+          ..._idBookMap,
+          ...state.idBook
+        }; // Gộp idBook, ưu tiên Đang đọc
+        if (slugsChanged && state.slug['Đang đọc']!.isNotEmpty) {
           _isLoading = true;
           _loadMultipleComics(state.slug['Đang đọc']!, 'Đang đọc');
-          _loadMultipleComics(state.slug['Yêu thích']!, 'Yêu thích');
-        } else if (state.slug['Đang đọc']!.isEmpty &&
-            state.slug['Yêu thích']!.isEmpty) {
-          _isLoading = false;
+        } else if (state.slug['Đang đọc']!.isEmpty) {
           _categories['Đang đọc'] = [];
-          _categories['Yêu thích'] = [];
+          // Chỉ tắt _isLoading nếu cả hai danh sách đều rỗng
+          if (_categories['Yêu thích']!.isEmpty) {
+            _isLoading = false;
+          }
         }
       });
     }, onError: (e) {
       setState(() {
-        _errorMessage = 'Không thể tải danh sách slug: $e';
+        _errorMessage = 'Không thể tải danh sách Đang đọc: $e';
         _isLoading = false;
-        _debugInfo = 'Lỗi khi tải slug: $e';
+        _debugInfo = 'Lỗi khi tải Đang đọc: $e';
+      });
+    });
+
+    // Lắng nghe Stream cho books_favorite (Yêu thích)
+    getSlugData(uid!, isReading: false).listen((SlugDataState state) {
+      bool slugsChanged = _categories['Yêu thích']!.length !=
+              state.slug['Yêu thích']!.length ||
+          !_categories['Yêu thích']!
+              .every((story) => state.slug['Yêu thích']!.contains(story.slug));
+
+      setState(() {
+        _idBookMap = {
+          ..._idBookMap,
+          ...state.idBook
+        }; // Gộp idBook, ưu tiên Yêu thích
+        if (slugsChanged && state.slug['Yêu thích']!.isNotEmpty) {
+          _isLoading = true;
+          _loadMultipleComics(state.slug['Yêu thích']!, 'Yêu thích');
+        } else if (state.slug['Yêu thích']!.isEmpty) {
+          _categories['Yêu thích'] = [];
+          // Chỉ tắt _isLoading nếu cả hai danh sách đều rỗng
+          if (_categories['Đang đọc']!.isEmpty) {
+            _isLoading = false;
+          }
+        }
+      });
+    }, onError: (e) {
+      setState(() {
+        _errorMessage = 'Không thể tải danh sách Yêu thích: $e';
+        _isLoading = false;
+        _debugInfo = 'Lỗi khi tải Yêu thích: $e';
       });
     });
   }
@@ -338,7 +373,12 @@ class _LibraryPageState extends State<LibraryPage> {
                                         foregroundColor: Colors.white,
                                         flex: 1,
                                         ontap: () {
-                                          deleteSlug(idBook);
+                                          if (type == 'Đang đọc') {
+                                            deleteSlug(idBook, 'books_reading');
+                                          } else {
+                                            deleteSlug(
+                                                idBook, 'books_favorite');
+                                          }
                                           Navigator.pop(context);
                                         },
                                       ),

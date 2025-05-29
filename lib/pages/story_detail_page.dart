@@ -33,6 +33,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
   String debugInfo = '';
   String storyDescription = '';
   Map? currentIndex;
+  int continueRead = 0;
+  final GlobalKey _chaptersKey = GlobalKey();
 
   String? uid;
 
@@ -42,7 +44,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     super.initState();
     storyDescription = widget.story.description; // Lưu mô tả ban đầu
     _loadComicDetail();
-    // getData('BVJnGXYhSnMIfueXqss4vwRjojd2');
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       uid = user.uid;
@@ -51,7 +52,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
         ? FirebaseFirestore.instance
             .collection('user_reading')
             .doc(uid)
-            .collection('books_of_user')
+            .collection('books_reading')
             .doc(widget.story.id)
             .snapshots()
         : const Stream.empty();
@@ -131,6 +132,17 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
       ));
     }
     chapters = sampleChapters;
+  }
+
+  void _scrollToChapters() {
+    final context = _chaptersKey.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -274,12 +286,110 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                             horizontal: 16.0, vertical: 8.0),
                         child: Row(
                           children: [
-                            Button_Info(
-                              text: 'Đọc ngay',
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              flex: 3,
-                              ontap: () {},
+                            StreamBuilder(
+                              stream: docStream,
+                              builder: (context, snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text('Something went wrong');
+                                }
+
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Text("Loading");
+                                }
+                                if (snapshot.data!.exists &&
+                                    snapshot.data!.data() != null) {
+                                  final data = snapshot.data!.data()!;
+                                  // var sortedKeys = data.keys.toList()..sort();
+
+                                  continueRead = int.parse(
+                                      data['chapters_reading']
+                                          .entries
+                                          .last
+                                          .key);
+                                  // final sortedKeys = data['chapters_reading']
+                                  //     .entries
+                                  //     .toList()
+                                  //     .sort(((a, b) => a.key.compareTo(b.key)));
+                                  // continueRead = sortedKeys.entries.last.key;
+
+                                  final chapter = chapters[continueRead];
+                                  return Button_Info(
+                                    text: 'Đọc tiếp',
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    flex: 3,
+                                    ontap: () {
+                                      if (chapter.apiData.isNotEmpty) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ChapterPage(
+                                              chapterIndex: continueRead,
+                                              chapters: chapters,
+                                              storySlug: widget.story.slug,
+                                              chapterTotal: chapters.length,
+                                              chapterApiData: chapter.apiData,
+                                              idBook: widget.story.id,
+                                              chapterTitle:
+                                                  chapter.title.isNotEmpty
+                                                      ? chapter.title
+                                                      : chapter.name,
+                                              chapterNumber: _getChapterNumber(
+                                                  chapter.name),
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Không thể đọc chương này')),
+                                        );
+                                      }
+                                    },
+                                  );
+                                } else {
+                                  return Button_Info(
+                                    text: 'Đọc ngay',
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    flex: 3,
+                                    ontap: () {
+                                      final chapter = chapters[continueRead];
+                                      if (chapter.apiData.isNotEmpty) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ChapterPage(
+                                              chapterIndex: 0,
+                                              chapters: chapters,
+                                              storySlug: widget.story.slug,
+                                              chapterTotal: chapters.length,
+                                              chapterApiData: chapter.apiData,
+                                              idBook: widget.story.id,
+                                              chapterTitle:
+                                                  chapter.title.isNotEmpty
+                                                      ? chapter.title
+                                                      : chapter.name,
+                                              chapterNumber: _getChapterNumber(
+                                                  chapter.name),
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Không thể đọc chương này')),
+                                        );
+                                      }
+                                    },
+                                  );
+                                }
+                              },
                             ),
                             const SizedBox(width: 10),
                             Button_Info(
@@ -287,8 +397,10 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.green,
                               flex: 2,
-                              ontap: () {},
-                            ),
+                              ontap: () {
+                                _scrollToChapters();
+                              },
+                            )
                           ],
                         ),
                       ),
@@ -386,11 +498,14 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Danh sách chương',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              key: _chaptersKey,
+                              child: Text(
+                                'Danh sách chương',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -424,6 +539,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) => ChapterPage(
+                                              chapterIndex: index,
+                                              chapters: chapters,
                                               storySlug: widget.story.slug,
                                               chapterTotal: chapters.length,
                                               chapterApiData: chapter.apiData,
@@ -486,9 +603,9 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                       {};
                                   final reading =
                                       (raw['chapters_reading'] is Map)
-                                          ? Map<String, double>.from(
+                                          ? Map<String, num>.from(
                                               raw['chapters_reading'])
-                                          : <String, double>{};
+                                          : <String, num>{};
 
                                   return GridView.builder(
                                     shrinkWrap: true,
@@ -508,8 +625,12 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                           _getChapterTitle(chapter);
                                       double fraction = 0.0;
                                       if (reading != null) {
+                                        // final numberChapter = _getChapterNumber(
+                                        //     chapters[index].name);
                                         final progress =
-                                            reading['${index + 1}'] ?? 0.0;
+                                            reading['${index}'] ?? 0.0;
+                                        // reading['$numberChapter'] ?? 0.0;
+                                        // final progress = 0;
                                         fraction = progress / 100.0;
                                       }
 
@@ -521,6 +642,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     ChapterPage(
+                                                  chapterIndex: index,
+                                                  chapters: chapters,
                                                   storySlug: widget.story.slug,
                                                   chapterTotal: chapters.length,
                                                   chapterApiData:
@@ -600,17 +723,18 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
   }
 
   // Chuyển đổi tên chương thành số
-  int _getChapterNumber(String chapterName) {
-    // Giữ lại phần số từ tên chương (ví dụ: "10", "10.5")
+  num _getChapterNumber(String chapterName) {
     final numberPattern = RegExp(r'^(\d+(\.\d+)?)');
     final match = numberPattern.firstMatch(chapterName);
     if (match != null && match.group(1) != null) {
-      try {
-        return double.parse(match.group(1)!).toInt();
-      } catch (e) {
-        return 0;
+      final value = double.parse(match.group(1)!);
+      // Nếu value là số nguyên (phần thập phân = 0) thì trả về int
+      if (value == value.toInt()) {
+        return value.toInt();
       }
+      // Ngược lại trả về double
+      return value;
     }
-    return 0;
+    return 0; // 0 là int, cũng hợp với num
   }
 }

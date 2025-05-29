@@ -1,26 +1,33 @@
 import 'package:btl/api/otruyen_api.dart';
+import 'package:btl/components/info_book_widgets.dart/button_info.dart';
+import 'package:btl/models/chapter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ChapterPage extends StatefulWidget {
   final String storySlug;
+  final List<Chapter> chapters;
   final String idBook;
   final String chapterTitle;
-  final int chapterNumber;
+  final num chapterNumber;
   final int chapterTotal;
+  final int chapterIndex;
   final String chapterApiData; // API URL để tải nội dung chương
 
   const ChapterPage({
     super.key,
     required this.storySlug,
     required this.idBook,
+    required this.chapters,
     required this.chapterApiData,
     required this.chapterTitle,
     required this.chapterNumber,
+    required this.chapterIndex,
     required this.chapterTotal,
   });
 
@@ -41,20 +48,75 @@ class _ChapterPageState extends State<ChapterPage> {
   final ScrollController _scrollController = ScrollController();
   String? uid;
   double sum = 0.0;
+  bool isEndChapter = false;
   // ScrollController  _scrollController = ScrollController();
 
   double _scrollPercentage = 0.0;
-  void _updateScrollPercentage() {
+  void _updateScrollPercentage() async {
     if (_scrollController.hasClients) {
       final offset = _scrollController.offset;
       final maxScrollExtent = _scrollController.position.maxScrollExtent;
       final percentage =
           maxScrollExtent > 0 ? (offset / maxScrollExtent) * 100 : 0.0;
       _scrollPercentage = double.parse(percentage.toStringAsFixed(2));
+      // if (offset == maxScrollExtent) {
+      //   nextChapter();
+      // }
       print('chạy scoll: $_scrollPercentage');
     }
   }
-  // Kiểm tra đăng nhập trước
+
+  num _getChapterNumber(String chapterName) {
+    final numberPattern = RegExp(r'^(\d+(\.\d+)?)');
+    final match = numberPattern.firstMatch(chapterName);
+    if (match != null && match.group(1) != null) {
+      final value = double.parse(match.group(1)!);
+      // Nếu value là số nguyên (phần thập phân = 0) thì trả về int
+      if (value == value.toInt()) {
+        return value.toInt();
+      }
+      // Ngược lại trả về double
+      return value;
+    }
+    return 0; // 0 là int, cũng hợp với num
+  }
+
+  void nextChapter() async {
+    final currentIndex = widget.chapters
+        .indexWhere((chapter) => chapter.apiData == widget.chapterApiData);
+    if (currentIndex < 0 || currentIndex + 1 >= widget.chapters.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đây là chương cuối cùng')),
+      );
+      return;
+    }
+
+    final chapter = widget.chapters[currentIndex + 1];
+    await Future.delayed(Duration(seconds: 1));
+    // print();
+    if (chapter.apiData.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChapterPage(
+            chapters: widget.chapters,
+            storySlug: widget.storySlug,
+            chapterTotal: widget.chapterTotal,
+            chapterIndex: widget.chapterIndex + 1,
+            chapterApiData: chapter.apiData,
+            idBook: widget.idBook,
+            chapterTitle:
+                chapter.title.isNotEmpty ? chapter.title : chapter.name,
+            chapterNumber: _getChapterNumber(chapter.name),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không thể đọc chương này')),
+      );
+    }
+  } // Kiểm tra đăng nhập trước
   // Phải kt dl trên firebase có không : nếu có dựa vào tham số trong chapter_reading để kéo đến vị trí trước đó rồi tiếp tục đọc
   // th1: chưa có truyện trên firebase và ui đã đăng nhập lưu vào firebase
 
@@ -62,7 +124,7 @@ class _ChapterPageState extends State<ChapterPage> {
     final documentSnapshot = await FirebaseFirestore.instance
         .collection('user_reading')
         .doc(uid)
-        .collection('books_of_user')
+        .collection('books_reading')
         .doc(widget.idBook)
         .get();
     if (documentSnapshot.exists) {
@@ -72,14 +134,14 @@ class _ChapterPageState extends State<ChapterPage> {
       final data = documentSnapshot.data() as Map;
       final currentIndex = data['chapters_reading'] as Map;
       // process = data['process'] ?? 0.0;
-      if (currentIndex.containsKey(widget.chapterNumber.toString())) {
-        indexChapter =
-            currentIndex[widget.chapterNumber.toString()]?.toDouble() ?? 0.0;
+      if (currentIndex.containsKey(widget.chapterIndex.toString())) {
+        indexChapter = currentIndex[widget.chapterIndex.toString()] ?? 0.0;
         isChapter = true;
+        print('hellllllllll $indexChapter, ${widget.chapterIndex}');
       }
       if (currentIndex.isNotEmpty) {
         sum = currentIndex.entries
-            .where((e) => e.key != widget.chapterNumber)
+            .where((e) => e.key != widget.chapterIndex.toString())
             .fold(0.0, (sum, e) => sum + e.value);
       }
     } else {
@@ -96,8 +158,8 @@ class _ChapterPageState extends State<ChapterPage> {
       await getData(uid!);
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (_scrollController.hasClients && indexChapter > 0) {
-          print('Đã gán được _scrollController $indexChapter');
           _restoreScrollPosition(indexChapter);
+          print('Đã gán được _scrollController $indexChapter');
           _scrollController.addListener(_updateScrollPercentage);
         } else {
           _scrollController.addListener(_updateScrollPercentage);
@@ -109,52 +171,51 @@ class _ChapterPageState extends State<ChapterPage> {
   }
 
   void updateLast(
-    int chapterNumber,
+    // num chapterNumber,
     double newProgress,
-  ) {
+  ) async {
     final rawProgress = (sum + newProgress) / widget.chapterTotal;
     final progress = double.parse(rawProgress.toStringAsFixed(2));
 
     if (isFirebase == false) {
       print('chạy hàm tạo mới');
-      FirebaseFirestore.instance
+      await FirebaseFirestore.instance
           .collection('user_reading')
           .doc(uid)
-          .collection('books_of_user')
+          .collection('books_reading')
           .doc(widget.idBook)
           .set({
-        'chapters_reading': {widget.chapterNumber.toString(): newProgress},
+        'chapters_reading': {widget.chapterIndex.toString(): newProgress},
         'process': progress,
         'slug': widget.storySlug,
-        'isfavorite': false,
-        'isreading': true,
         'id_book': widget.idBook,
         'totals_chapter': widget.chapterTotal
       });
     } else if (isFirebase) {
+      final key = widget.chapterIndex.toString();
       print('chạy hàm update');
-      FirebaseFirestore.instance
+      await FirebaseFirestore.instance
           .collection('user_reading')
           .doc(uid)
-          .collection('books_of_user')
+          .collection('books_reading')
           .doc(widget.idBook)
-          .update({
-        'isreading': true,
-        'chapters_reading.$chapterNumber': newProgress,
+          .set({
+        'chapters_reading': {key: newProgress},
         'process': progress,
-      });
+      }, SetOptions(merge: true));
     }
   }
 
-  Future<void> _restoreScrollPosition(double percentage) async {
+  void _restoreScrollPosition(double percentage) {
     final pct = percentage.clamp(0.0, 100.0);
     print('pct $pct');
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future.delayed(Duration(seconds: 2));
+      print('chạy hàm delay');
+      await Future.delayed(Duration(seconds: 1));
       final maxExtent = _scrollController.position.maxScrollExtent;
       final targetOffset = (pct / 100.0) * maxExtent;
-      print('Restoring: maxExtent=$maxExtent, targetOffset=$targetOffset');
+      print('Restoring: maxExtent=$maxExtent, targetOffset=$pct');
       print('max $maxExtent');
       _scrollController.jumpTo(
         targetOffset,
@@ -165,6 +226,7 @@ class _ChapterPageState extends State<ChapterPage> {
   @override
   void initState() {
     super.initState();
+    print('hello');
     loadData();
   }
 
@@ -173,7 +235,7 @@ class _ChapterPageState extends State<ChapterPage> {
     // TODO: implement dispose
     super.dispose();
     print('thoát  ${widget.chapterNumber}');
-    updateLast(widget.chapterNumber, _scrollPercentage);
+    updateLast(_scrollPercentage);
   }
 
   Future<void> _loadChapterContent() async {
@@ -260,6 +322,7 @@ class _ChapterPageState extends State<ChapterPage> {
           : errorMessage.isNotEmpty
               ? Center(child: Text(errorMessage))
               : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   controller: _scrollController,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,6 +399,33 @@ class _ChapterPageState extends State<ChapterPage> {
                             ),
                           ),
                         ),
+                      // Padding(
+                      //   padding: const EdgeInsets.symmetric(
+                      //       horizontal: 12.0, vertical: 15),
+                      //   child: Row(
+                      //     children: [
+                      //       Button_Info(
+                      //         text: 'Chương trước',
+                      //         backgroundColor: Colors.white,
+                      //         foregroundColor: Colors.green,
+                      //         flex: 1,
+                      //         ontap: () {},
+                      //       ),
+                      //       SizedBox(
+                      //         width: 10,
+                      //       ),
+                      //       Button_Info(
+                      //         text: "Chương sau",
+                      //         backgroundColor: Colors.green,
+                      //         foregroundColor: Colors.white,
+                      //         flex: 1,
+                      //         ontap: () {
+                      //           nextChapter();
+                      //         },
+                      //       )
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

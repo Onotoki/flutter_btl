@@ -26,68 +26,29 @@ class RateAllWidget extends StatefulWidget {
 
 class _RateAllWidgetState extends State<RateAllWidget> {
   bool isFavorite = false;
-  bool isReading = false;
+  bool hasFavorite = false;
   String? uid;
 
-  Future<void> toggleFavorite(
+  Future<void> updateFavor(
     String idBook,
     String uid,
     String slug,
+    bool hasFavorite,
+    bool isFavorite,
   ) async {
     try {
-      // Lấy tài liệu hiện tại từ Firestore
       final docRef = FirebaseFirestore.instance
           .collection('user_reading')
           .doc(uid)
-          .collection('books_of_user')
+          .collection('books_favorite')
           .doc(idBook);
-
-      final doc = await docRef.get();
-      bool newFavoriteStatus = !isFavorite;
-
-      if (doc.exists) {
-        final data = doc.data();
-        bool currentIsReading = data?['isreading'] == true;
-
-        // Nếu không đọc và bỏ yêu thích, xóa tài liệu
-        if (!currentIsReading && !newFavoriteStatus) {
-          await docRef.delete();
-        } else {
-          // Cập nhật trạng thái yêu thích
-          await docRef.update({'isfavorite': newFavoriteStatus});
-        }
-      } else {
-        // Nếu tài liệu không tồn tại, tạo mới
-        // await docRef.set({
-        //   'process': 0,
-        //   'slug': slug,
-        //   'isfavorite': newFavoriteStatus,
-        //   'isreading': false,
-        // });
-
-        await docRef.set({
-          'chapters_reading': {},
-          'process': 0,
-          'slug': slug,
-          'isfavorite': newFavoriteStatus,
-          'isreading': false,
-          'id_book': widget.idBook,
-          'totals_chapter': widget.totalChapter,
-        });
+      if (hasFavorite != true && isFavorite == true) {
+        docRef.set({'slug': slug, 'id_book': idBook});
+      } else if (hasFavorite == true && isFavorite == false) {
+        docRef.delete();
       }
-
-      // Cập nhật trạng thái UI sau khi Firestore thành công
-      setState(() {
-        isFavorite = newFavoriteStatus;
-      });
     } catch (e) {
-      // Xử lý lỗi và khôi phục trạng thái UI
-      setState(() {
-        isFavorite = !isFavorite; // Hoàn nguyên trạng thái
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi cập nhật yêu thích: $e')),
-      );
+      print('Lỗi khi kiểm tra yêu thích: $e');
     }
   }
 
@@ -98,15 +59,14 @@ class _RateAllWidgetState extends State<RateAllWidget> {
       final doc = await FirebaseFirestore.instance
           .collection('user_reading')
           .doc(uid)
-          .collection('books_of_user')
+          .collection('books_favorite')
           .doc(widget.idBook)
           .get();
 
       if (doc.exists) {
-        final data = doc.data();
         setState(() {
-          isFavorite = data?['isfavorite'] == true;
-          isReading = data?['isreading'] == true;
+          hasFavorite = true;
+          isFavorite = true;
         });
       }
     } catch (e) {
@@ -115,7 +75,12 @@ class _RateAllWidgetState extends State<RateAllWidget> {
   }
 
   void getDataFirebase() async {
+    _rate = FirebaseFirestore.instance
+        .collection('books')
+        .doc(widget.idBook)
+        .snapshots();
     final user = FirebaseAuth.instance.currentUser;
+
     if (user != null) {
       uid = user.uid;
       await checkIsFavorite(); // Gọi để khởi tạo trạng thái
@@ -127,11 +92,14 @@ class _RateAllWidgetState extends State<RateAllWidget> {
   @override
   void initState() {
     super.initState();
-    _rate = FirebaseFirestore.instance
-        .collection('books')
-        .doc(widget.idBook)
-        .snapshots();
     getDataFirebase();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    updateFavor(widget.idBook, uid!, widget.slug, hasFavorite, isFavorite);
   }
 
   @override
@@ -287,7 +255,10 @@ class _RateAllWidgetState extends State<RateAllWidget> {
                       },
                     );
                   } else {
-                    toggleFavorite(widget.idBook, uid!, widget.slug);
+                    // toggleFavorite(widget.idBook, uid!, widget.slug);
+                    setState(() {
+                      isFavorite = !isFavorite;
+                    });
                   }
                 },
                 child: Container(
