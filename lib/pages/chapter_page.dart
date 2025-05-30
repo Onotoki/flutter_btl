@@ -49,6 +49,7 @@ class _ChapterPageState extends State<ChapterPage> {
   String? uid;
   double sum = 0.0;
   bool isEndChapter = false;
+  bool isScrolling = true;
 
   double _scrollPercentage = 0.0;
   void _updateScrollPercentage() async {
@@ -91,7 +92,8 @@ class _ChapterPageState extends State<ChapterPage> {
     }
 
     final chapter = widget.chapters[currentIndex + 1];
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 2));
+
     // print();
     if (chapter.apiData.isNotEmpty) {
       Navigator.pushReplacement(
@@ -206,7 +208,7 @@ class _ChapterPageState extends State<ChapterPage> {
   void _restoreScrollPosition(double percentage) async {
     print('percentage $percentage');
     print('chạy hàm delay');
-    await Future.delayed(Duration(seconds: 1));
+    // await Future.delayed(Duration(seconds: 1));
     final maxExtent = _scrollController.position.maxScrollExtent;
     final targetOffset = (percentage / 100.0) * maxExtent;
     print('Restoring: maxExtent=$maxExtent, targetOffset=$percentage');

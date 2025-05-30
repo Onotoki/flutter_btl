@@ -36,6 +36,7 @@ class AppRoot extends StatelessWidget {
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, state) {
         final mode = state is LightTheme ? ThemeMode.light : ThemeMode.dark;
+
         return MaterialApp(
           theme: lightTheme,
           darkTheme: darkTheme,

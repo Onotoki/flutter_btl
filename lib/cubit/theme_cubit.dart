@@ -5,17 +5,27 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit() : super(InitialTheme());
+  ThemeCubit() : super(LightTheme()) {
+    loadTheme(); // Load theme ngay khi khởi tạo
+  }
 
-  void lightThemeEvent() async {
+  void toggleTheme() async {
+    if (state is LightTheme) {
+      await darkThemeEvent();
+    } else {
+      await lightThemeEvent();
+    }
+  }
+
+  Future<void> lightThemeEvent() async {
     emit(LightTheme());
     SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
 
-    saveTheme(LightTheme());
+    await saveTheme(LightTheme());
   }
 
-  void darkThemeEvent() async {
+  Future<void> darkThemeEvent() async {
     emit(DarkTheme());
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
@@ -30,9 +40,11 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   Future<void> loadTheme() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('themeMode') == 'light') {
+    final String themeMode = prefs.getString('themeMode') ??
+        'light'; // Mặc định là 'light' nếu không có giá trị
+    if (themeMode == 'light') {
       emit(LightTheme());
-    } else if (prefs.getString('themeMode') == 'dark') {
+    } else {
       emit(DarkTheme());
     }
   }
