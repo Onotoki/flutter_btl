@@ -23,7 +23,25 @@ class _RatingSelectorState extends State<RatingSelector> {
   int? selectedIndex;
   String? uid;
   bool isRate = false;
-  late Future<QuerySnapshot> checkUserRate;
+
+  Future<void> checkUserRate(String uid) async {
+    print('chạy checkUserRate');
+    final documentSnapshot = await FirebaseFirestore.instance
+        .collection('books')
+        .doc(widget.idBook)
+        .collection('rate')
+        .where('user_id', isEqualTo: uid)
+        .get();
+    if (documentSnapshot.docs.isNotEmpty) {
+      isRate = true;
+      final data = documentSnapshot.docs.first.data() as Map;
+      setState(() {
+        selectedIndex = data['user_rate'];
+      });
+    } else {
+      print('Document does not exist on the database');
+    }
+  }
 
   @override
   void initState() {
@@ -32,13 +50,8 @@ class _RatingSelectorState extends State<RatingSelector> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       uid = user.uid;
+      checkUserRate(uid!);
     }
-    checkUserRate = FirebaseFirestore.instance
-        .collection('books')
-        .doc(widget.idBook)
-        .collection('rate')
-        .where('user_id', isEqualTo: uid)
-        .get();
   }
 
   final List<Map<String, dynamic>> items = [
@@ -104,46 +117,30 @@ class _RatingSelectorState extends State<RatingSelector> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        FutureBuilder(
-          future: checkUserRate,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Text("Something went wrong");
-            }
-
-            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-              // Map<String, dynamic> data = snapshot.data!.docs.first.data();
-              final data =
-                  snapshot.data!.docs.first.data() as Map<String, dynamic>;
-              selectedIndex = data['user_rate'];
-              isRate = true;
-            }
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(
-                  items.length,
-                  (index) {
-                    final item = items[index];
-                    return RateWidget(
-                      isSelected: ((selectedIndex == index) ||
-                          (isRate && selectedIndex == index)),
-                      onTap: () {
-                        if (!isRate) {
-                          setState(() {
-                            selectedIndex = index;
-                          });
-                        }
-                      },
-                      imageIcon: item['icon'],
-                      textIcon: item['text'],
-                      activeColor: item['color'],
-                    );
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(
+              items.length,
+              (index) {
+                final item = items[index];
+                return RateWidget(
+                  isSelected: ((selectedIndex == index) ||
+                      (isRate && selectedIndex == index)),
+                  onTap: () {
+                    if (!isRate) {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                    }
                   },
-                ),
-              ),
-            );
-          },
+                  imageIcon: item['icon'],
+                  textIcon: item['text'],
+                  activeColor: item['color'],
+                );
+              },
+            ),
+          ),
         ),
         SizedBox(
           height: 30,

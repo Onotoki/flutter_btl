@@ -49,7 +49,6 @@ class _ChapterPageState extends State<ChapterPage> {
   String? uid;
   double sum = 0.0;
   bool isEndChapter = false;
-  // ScrollController  _scrollController = ScrollController();
 
   double _scrollPercentage = 0.0;
   void _updateScrollPercentage() async {
@@ -133,7 +132,6 @@ class _ChapterPageState extends State<ChapterPage> {
       print('Document data: ${documentSnapshot.data()}');
       final data = documentSnapshot.data() as Map;
       final currentIndex = data['chapters_reading'] as Map;
-      // process = data['process'] ?? 0.0;
       if (currentIndex.containsKey(widget.chapterIndex.toString())) {
         indexChapter = currentIndex[widget.chapterIndex.toString()] ?? 0.0;
         isChapter = true;
@@ -171,7 +169,6 @@ class _ChapterPageState extends State<ChapterPage> {
   }
 
   void updateLast(
-    // num chapterNumber,
     double newProgress,
   ) async {
     final rawProgress = (sum + newProgress) / widget.chapterTotal;
@@ -206,21 +203,18 @@ class _ChapterPageState extends State<ChapterPage> {
     }
   }
 
-  void _restoreScrollPosition(double percentage) {
-    final pct = percentage.clamp(0.0, 100.0);
-    print('pct $pct');
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      print('chạy hàm delay');
-      await Future.delayed(Duration(seconds: 1));
-      final maxExtent = _scrollController.position.maxScrollExtent;
-      final targetOffset = (pct / 100.0) * maxExtent;
-      print('Restoring: maxExtent=$maxExtent, targetOffset=$pct');
-      print('max $maxExtent');
-      _scrollController.jumpTo(
-        targetOffset,
-      );
-    });
+  void _restoreScrollPosition(double percentage) async {
+    print('percentage $percentage');
+    print('chạy hàm delay');
+    await Future.delayed(Duration(seconds: 1));
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    final targetOffset = (percentage / 100.0) * maxExtent;
+    print('Restoring: maxExtent=$maxExtent, targetOffset=$percentage');
+    print('max $maxExtent');
+    _scrollController.jumpTo(
+      targetOffset,
+    );
+    ;
   }
 
   @override
@@ -399,33 +393,9 @@ class _ChapterPageState extends State<ChapterPage> {
                             ),
                           ),
                         ),
-                      // Padding(
-                      //   padding: const EdgeInsets.symmetric(
-                      //       horizontal: 12.0, vertical: 15),
-                      //   child: Row(
-                      //     children: [
-                      //       Button_Info(
-                      //         text: 'Chương trước',
-                      //         backgroundColor: Colors.white,
-                      //         foregroundColor: Colors.green,
-                      //         flex: 1,
-                      //         ontap: () {},
-                      //       ),
-                      //       SizedBox(
-                      //         width: 10,
-                      //       ),
-                      //       Button_Info(
-                      //         text: "Chương sau",
-                      //         backgroundColor: Colors.green,
-                      //         foregroundColor: Colors.white,
-                      //         flex: 1,
-                      //         ontap: () {
-                      //           nextChapter();
-                      //         },
-                      //       )
-                      //     ],
-                      //   ),
-                      // ),
+                      SizedBox(
+                        height: 5,
+                      )
                     ],
                   ),
                 ),

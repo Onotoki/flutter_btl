@@ -20,11 +20,6 @@ class StoryDetailPage extends StatefulWidget {
   State<StoryDetailPage> createState() => _StoryDetailPageState();
 }
 
-// để thực hiện đánh giá và comment có 2 trường hợp
-// th1: chưa có bất cứ ai comment hay đánh giá(khi có người đầu tiên thực hiện thì sẽ gửi id sách kèm thông tin comment hay đánh lên firebase)
-// th2: đã comment hoặc đánh giá (kéo về để hiển thị và thêm mới)
-// Kiểm tra xem id của sách đã có trên firebase chưa - nếu chưa hiển thị chưa có đánh giá, comment - nếu có thì kéo về hiển thị
-
 class _StoryDetailPageState extends State<StoryDetailPage> {
   bool isLoading = true;
   String errorMessage = '';
@@ -37,66 +32,69 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
   final GlobalKey _chaptersKey = GlobalKey();
 
   String? uid;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? docStream;
+  late String idBook;
 
-  late final Stream<DocumentSnapshot<Map<String, dynamic>>>? docStream;
+  void _scrollToChapters() {
+    final context = _chaptersKey.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     storyDescription = widget.story.description; // Lưu mô tả ban đầu
     _loadComicDetail();
     final user = FirebaseAuth.instance.currentUser;
+    idBook = widget.story.slug;
+
     if (user != null) {
       uid = user.uid;
+      docStream = FirebaseFirestore.instance
+          .collection('user_reading')
+          .doc(uid)
+          .collection('books_reading')
+          .doc(idBook)
+          .snapshots();
+    } else {
+      docStream = null; // Không cần stream nếu chưa đăng nhập
     }
-    docStream = uid != null
-        ? FirebaseFirestore.instance
-            .collection('user_reading')
-            .doc(uid)
-            .collection('books_reading')
-            .doc(widget.story.id)
-            .snapshots()
-        : const Stream.empty();
   }
 
   Future<void> _loadComicDetail() async {
     String logs = '';
     try {
       logs += 'Đang tải thông tin chi tiết truyện: ${widget.story.slug}\n';
-
-      // Lưu ý: trong API mới, cần truyền slug của truyện thay vì id
       final result = await OTruyenApi.getComicDetail(widget.story.slug);
       logs += 'Chi tiết API Response keys: ${result.keys.toList()}\n';
 
       setState(() {
-        // Nếu có sẵn chaptersData từ Story, sử dụng ngay
         if (widget.story.chaptersData.isNotEmpty) {
           logs += 'Sử dụng chaptersData có sẵn từ story\n';
           chapters = Chapter.fromStoryChapters(widget.story.chaptersData);
           logs += 'Đã tạo ${chapters.length} chapter từ chaptersData\n';
-        }
-        // Nếu không, phân tích từ kết quả API
-        else {
-          // Kiểm tra item.chapters trong API
+        } else {
           if (result.containsKey('item') &&
               result['item'] is Map &&
               result['item'].containsKey('chapters')) {
             logs += 'Tìm thấy chapters trong item\n';
             var chaptersData = result['item']['chapters'];
-
-            // Chuyển đổi chaptersData thành danh sách Chapter
             if (chaptersData is List) {
               chapters = Chapter.fromStoryChapters(chaptersData);
               logs += 'Đã tạo ${chapters.length} chapter từ item.chapters\n';
             }
-          }
-          // Nếu không có chapters, tạo mẫu
-          else {
+          } else {
             logs += 'Không tìm thấy cấu trúc chapters từ API, tạo mẫu\n';
             _createSampleChapters();
           }
         }
 
-        // Cập nhật mô tả nếu có trong API
         if (result.containsKey('item') &&
             result['item'] is Map &&
             result['item'].containsKey('content') &&
@@ -119,7 +117,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     }
   }
 
-  // Tạo dữ liệu mẫu khi không tải được từ API
   void _createSampleChapters() {
     List<Chapter> sampleChapters = [];
     for (int i = 1; i <= 10; i++) {
@@ -134,28 +131,17 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     chapters = sampleChapters;
   }
 
-  void _scrollToChapters() {
-    final context = _chaptersKey.currentContext;
-    if (context != null) {
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    //Hàm tính kích thước ảnh responsive theo màn hình
     Size _getResponsiveSize(BuildContext context) {
       final screenWidth = MediaQuery.of(context).size.width;
-      final width = (screenWidth - 40) / 3; // trừ padding + khoảng cách
+      final width = (screenWidth - 40) / 3;
       final height = width * 4 / 3;
       return Size(width, height);
     }
 
     final size = _getResponsiveSize(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.story.title),
@@ -168,7 +154,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Debug info button
                       if (debugInfo.isNotEmpty)
                         GestureDetector(
                           onTap: () {
@@ -197,14 +182,11 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                             ),
                           ),
                         ),
-
-                      // Story info section
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Thumbnail
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
@@ -217,16 +199,13 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     width: 120,
                                     height: 160,
                                     color: Colors.grey[300],
-                                    child: const Center(
-                                      child: Icon(Icons.error),
-                                    ),
+                                    child:
+                                        const Center(child: Icon(Icons.error)),
                                   );
                                 },
                               ),
                             ),
                             const SizedBox(width: 16),
-
-                            // Story details
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,19 +215,13 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 8),
                                   Text('Số chương: ${widget.story.chapters}'),
-
-                                  // Hiển thị tác giả
                                   if (widget.story.authors.isNotEmpty)
                                     Text(
-                                      'Tác giả: ${widget.story.authors.join(", ")}',
-                                    ),
-
+                                        'Tác giả: ${widget.story.authors.join(", ")}'),
                                   Text('Lượt xem: ${widget.story.views}'),
                                   Text('Trạng thái: ${widget.story.status}'),
                                   const SizedBox(height: 8),
@@ -259,18 +232,15 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                         widget.story.categories.map((category) {
                                       return Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
+                                            horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: Colors.green.withOpacity(0.2),
                                           borderRadius:
                                               BorderRadius.circular(16),
                                         ),
-                                        child: Text(
-                                          category,
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
+                                        child: Text(category,
+                                            style:
+                                                const TextStyle(fontSize: 12)),
                                       );
                                     }).toList(),
                                   ),
@@ -280,147 +250,99 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                           ],
                         ),
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
                         child: Row(
                           children: [
-                            StreamBuilder(
-                              stream: docStream,
-                              builder: (context, snapshot) {
-                                if (snapshot.hasError) {
-                                  return Text('Something went wrong');
-                                }
-
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Text("Loading");
-                                }
-                                if (snapshot.data!.exists &&
-                                    snapshot.data!.data() != null) {
-                                  final data = snapshot.data!.data()!;
-                                  // var sortedKeys = data.keys.toList()..sort();
-
-                                  continueRead = int.parse(
-                                      data['chapters_reading']
-                                          .entries
-                                          .last
-                                          .key);
-                                  // final sortedKeys = data['chapters_reading']
-                                  //     .entries
-                                  //     .toList()
-                                  //     .sort(((a, b) => a.key.compareTo(b.key)));
-                                  // continueRead = sortedKeys.entries.last.key;
-
-                                  final chapter = chapters[continueRead];
-                                  return Button_Info(
-                                    text: 'Đọc tiếp',
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    flex: 3,
-                                    ontap: () {
-                                      if (chapter.apiData.isNotEmpty) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ChapterPage(
-                                              chapterIndex: continueRead,
-                                              chapters: chapters,
-                                              storySlug: widget.story.slug,
-                                              chapterTotal: chapters.length,
-                                              chapterApiData: chapter.apiData,
-                                              idBook: widget.story.id,
-                                              chapterTitle:
-                                                  chapter.title.isNotEmpty
-                                                      ? chapter.title
-                                                      : chapter.name,
-                                              chapterNumber: _getChapterNumber(
-                                                  chapter.name),
+                            // Chỉ sử dụng StreamBuilder nếu đã đăng nhập
+                            if (uid != null && docStream != null)
+                              StreamBuilder<
+                                  DocumentSnapshot<Map<String, dynamic>>>(
+                                stream: docStream,
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasError) {
+                                    return Text('Something went wrong');
+                                  }
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Text("Loading");
+                                  }
+                                  if (snapshot.hasData &&
+                                      snapshot.data != null &&
+                                      snapshot.data!.exists &&
+                                      snapshot.data!.data() != null) {
+                                    final data = snapshot.data!.data()!;
+                                    continueRead = int.parse(
+                                        data['chapters_reading']
+                                            .entries
+                                            .last
+                                            .key);
+                                    final chapter = chapters[continueRead];
+                                    return Button_Info(
+                                      text: 'Đọc tiếp',
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      flex: 3,
+                                      ontap: () {
+                                        if (chapter.apiData.isNotEmpty) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ChapterPage(
+                                                chapterIndex: continueRead,
+                                                chapters: chapters,
+                                                storySlug: widget.story.slug,
+                                                chapterTotal: chapters.length,
+                                                chapterApiData: chapter.apiData,
+                                                idBook:
+                                                    idBook, // Sử dụng idBook hợp lệ
+                                                chapterTitle:
+                                                    chapter.title.isNotEmpty
+                                                        ? chapter.title
+                                                        : chapter.name,
+                                                chapterNumber:
+                                                    _getChapterNumber(
+                                                        chapter.name),
+                                              ),
                                             ),
-                                          ),
-                                        );
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  'Không thể đọc chương này')),
-                                        );
-                                      }
-                                    },
-                                  );
-                                } else {
-                                  return Button_Info(
-                                    text: 'Đọc ngay',
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    flex: 3,
-                                    ontap: () {
-                                      final chapter = chapters[continueRead];
-                                      if (chapter.apiData.isNotEmpty) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ChapterPage(
-                                              chapterIndex: 0,
-                                              chapters: chapters,
-                                              storySlug: widget.story.slug,
-                                              chapterTotal: chapters.length,
-                                              chapterApiData: chapter.apiData,
-                                              idBook: widget.story.id,
-                                              chapterTitle:
-                                                  chapter.title.isNotEmpty
-                                                      ? chapter.title
-                                                      : chapter.name,
-                                              chapterNumber: _getChapterNumber(
-                                                  chapter.name),
-                                            ),
-                                          ),
-                                        );
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  'Không thể đọc chương này')),
-                                        );
-                                      }
-                                    },
-                                  );
-                                }
-                              },
-                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    'Không thể đọc chương này')),
+                                          );
+                                        }
+                                      },
+                                    );
+                                  }
+                                  return _buildReadNowButton(idBook);
+                                },
+                              )
+                            else
+                              _buildReadNowButton(idBook),
                             const SizedBox(width: 10),
                             Button_Info(
                               text: 'Chương',
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.green,
                               flex: 2,
-                              ontap: () {
-                                _scrollToChapters();
-                              },
-                            )
+                              ontap: _scrollToChapters,
+                            ),
                           ],
                         ),
                       ),
-
-                      // Description
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Mô tả',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            const Text('Mô tả',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
-
-                            // Phần mô tả rút gọn
                             Text(
                               storyDescription.isNotEmpty
                                   ? storyDescription
@@ -429,10 +351,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(fontSize: 14),
                             ),
-
                             const SizedBox(height: 4),
-
-                            // Nút "Chi tiết"
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
@@ -453,12 +372,11 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              'Tóm tắt đầy đủ',
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
+                                            Text('Tóm tắt đầy đủ',
+                                                style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
                                             const SizedBox(height: 10),
                                             const Divider(thickness: 0.3),
                                             Text(
@@ -474,25 +392,20 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     },
                                   );
                                 },
-                                child: Text(
-                                  'Chi tiết',
-                                  style: TextStyle(color: Colors.green[300]),
-                                ),
+                                child: Text('Chi tiết',
+                                    style: TextStyle(color: Colors.green[300])),
                               ),
                             ),
                           ],
                         ),
                       ),
-
                       RateAllWidget(
-                        idBook: widget.story.id,
+                        idBook: idBook, // Sử dụng idBook hợp lệ
                         title: widget.story.title,
                         slug: widget.story.slug,
                         totalChapter: chapters.length,
                       ),
                       const Divider(thickness: 0.5),
-
-                      // Chapters list
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -500,21 +413,14 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                           children: [
                             Container(
                               key: _chaptersKey,
-                              child: Text(
-                                'Danh sách chương',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              child: Text('Danh sách chương',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 8),
-
-                            // 1) Nếu không có chương nào
                             if (chapters.isEmpty)
                               const Center(child: Text('Không có chương nào')),
-
-                            // 2) Nếu có chương và chưa đăng nhập ⇒ GridView bình thường
                             if (uid == null)
                               GridView.builder(
                                 shrinkWrap: true,
@@ -531,9 +437,9 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                   final chapter = chapters[index];
                                   final chapterTitle =
                                       _getChapterTitle(chapter);
-
                                   return GestureDetector(
                                     onTap: () {
+                                      print('idBoook: ${idBook}');
                                       if (chapter.apiData.isNotEmpty) {
                                         Navigator.push(
                                           context,
@@ -544,7 +450,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                               storySlug: widget.story.slug,
                                               chapterTotal: chapters.length,
                                               chapterApiData: chapter.apiData,
-                                              idBook: widget.story.id,
+                                              idBook:
+                                                  idBook, // Sử dụng idBook hợp lệ
                                               chapterTitle:
                                                   chapter.title.isNotEmpty
                                                       ? chapter.title
@@ -572,9 +479,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                         child: Center(
                                           child: Text(
                                             chapterTitle,
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                            ),
+                                            style:
+                                                const TextStyle(fontSize: 13),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -583,7 +489,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                   );
                                 },
                               ),
-
                             if (uid != null)
                               StreamBuilder<DocumentSnapshot>(
                                 stream: docStream,
@@ -597,7 +502,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     return const Center(
                                         child: CircularProgressIndicator());
                                   }
-
                                   final raw = snapshot.data?.data()
                                           as Map<String, dynamic>? ??
                                       {};
@@ -606,7 +510,6 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                           ? Map<String, num>.from(
                                               raw['chapters_reading'])
                                           : <String, num>{};
-
                                   return GridView.builder(
                                     shrinkWrap: true,
                                     physics:
@@ -625,15 +528,10 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                           _getChapterTitle(chapter);
                                       double fraction = 0.0;
                                       if (reading != null) {
-                                        // final numberChapter = _getChapterNumber(
-                                        //     chapters[index].name);
                                         final progress =
                                             reading['${index}'] ?? 0.0;
-                                        // reading['$numberChapter'] ?? 0.0;
-                                        // final progress = 0;
                                         fraction = progress / 100.0;
                                       }
-
                                       return GestureDetector(
                                         onTap: () {
                                           if (chapter.apiData.isNotEmpty) {
@@ -648,7 +546,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                                   chapterTotal: chapters.length,
                                                   chapterApiData:
                                                       chapter.apiData,
-                                                  idBook: widget.story.id,
+                                                  idBook:
+                                                      idBook, // Sử dụng idBook hợp lệ
                                                   chapterTitle:
                                                       chapter.title.isNotEmpty
                                                           ? chapter.title
@@ -687,8 +586,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                                 child: Text(
                                                   chapterTitle,
                                                   style: const TextStyle(
-                                                    fontSize: 13,
-                                                  ),
+                                                      fontSize: 13),
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
@@ -707,34 +605,66 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                     ],
                   ),
                 ),
-    ); // end Scaffold
-  } // end build
+    );
+  }
 
-  // Helper method để tạo tiêu đề chương
+  // Widget nút "Đọc ngay" dùng chung
+  Widget _buildReadNowButton(String idBook) {
+    return Button_Info(
+      text: 'Đọc ngay',
+      backgroundColor: Colors.green,
+      foregroundColor: Colors.white,
+      flex: 3,
+      ontap: () {
+        if (chapters.isNotEmpty) {
+          final chapter = chapters[0]; // Bắt đầu từ chương đầu tiên
+          if (chapter.apiData.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChapterPage(
+                  chapterIndex: 0,
+                  chapters: chapters,
+                  storySlug: widget.story.slug,
+                  chapterTotal: chapters.length,
+                  chapterApiData: chapter.apiData,
+                  idBook: idBook,
+                  chapterTitle:
+                      chapter.title.isNotEmpty ? chapter.title : chapter.name,
+                  chapterNumber: _getChapterNumber(chapter.name),
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Không thể đọc chương này')),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không có chương nào để đọc')),
+          );
+        }
+      },
+    );
+  }
+
   String _getChapterTitle(Chapter chapter) {
     final number = _getChapterNumber(chapter.name);
     final title = chapter.title.isNotEmpty ? chapter.title : '';
-
     if (number > 0) {
       return title.isNotEmpty ? 'Chương $number: $title' : 'Chương $number';
-    } else {
-      return title.isNotEmpty ? title : chapter.name;
     }
+    return title.isNotEmpty ? title : chapter.name;
   }
 
-  // Chuyển đổi tên chương thành số
   num _getChapterNumber(String chapterName) {
     final numberPattern = RegExp(r'^(\d+(\.\d+)?)');
     final match = numberPattern.firstMatch(chapterName);
     if (match != null && match.group(1) != null) {
       final value = double.parse(match.group(1)!);
-      // Nếu value là số nguyên (phần thập phân = 0) thì trả về int
-      if (value == value.toInt()) {
-        return value.toInt();
-      }
-      // Ngược lại trả về double
-      return value;
+      return value == value.toInt() ? value.toInt() : value;
     }
-    return 0; // 0 là int, cũng hợp với num
+    return 0;
   }
 }

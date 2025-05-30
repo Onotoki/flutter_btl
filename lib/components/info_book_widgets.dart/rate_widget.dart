@@ -74,7 +74,7 @@ class _RateAllWidgetState extends State<RateAllWidget> {
     }
   }
 
-  void getDataFirebase() async {
+  void getDataFirebase() {
     _rate = FirebaseFirestore.instance
         .collection('books')
         .doc(widget.idBook)
@@ -83,7 +83,7 @@ class _RateAllWidgetState extends State<RateAllWidget> {
 
     if (user != null) {
       uid = user.uid;
-      await checkIsFavorite(); // Gọi để khởi tạo trạng thái
+      checkIsFavorite(); // Gọi để khởi tạo trạng thái
     }
   }
 
@@ -117,7 +117,8 @@ class _RateAllWidgetState extends State<RateAllWidget> {
         }
 
         // Lấy điểm và số lượng đánh giá
-        final data = snapshot.data!.data() as Map<String, dynamic>?;
+
+        final data = snapshot.data?.data() as Map<String, dynamic>?;
         final currentRate = data?['rate'] ?? 0;
         final countRate = data?['count'] ?? 0;
 
@@ -129,47 +130,42 @@ class _RateAllWidgetState extends State<RateAllWidget> {
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
+                    isScrollControlled: true,
                     builder: (context) {
                       return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          height: min(300, 300),
-                          width: double.infinity,
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 5),
-                              Text(
-                                widget.title,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                        padding: const EdgeInsets.only(
+                            top: 8.0, left: 8, right: 8, bottom: 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 5),
+                            Text(
+                              widget.title,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
                               ),
-                              const SizedBox(height: 5),
-                              Text(
-                                currentRate != 0
-                                    ? '$currentRate/ $countRate đánh giá'
-                                    : 'Chưa có đánh giá nào',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              const SizedBox(height: 18),
-                              Expanded(
-                                flex: 1,
-                                child: RatingSelector(
-                                  idBook: widget.idBook,
-                                  currentRate:
-                                      double.parse(currentRate.toString()),
-                                  countRate: countRate,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              currentRate != 0
+                                  ? '$currentRate/ $countRate đánh giá'
+                                  : 'Chưa có đánh giá nào',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(height: 18),
+                            RatingSelector(
+                              idBook: widget.idBook,
+                              currentRate: double.parse(currentRate.toString()),
+                              countRate: countRate,
+                            ),
+                          ],
                         ),
                       );
                     },
                   );
                 },
-                child: Container(
+                child: SizedBox(
                   height: 60,
                   child: Stack(
                     alignment: AlignmentDirectional.bottomCenter,
@@ -190,18 +186,18 @@ class _RateAllWidgetState extends State<RateAllWidget> {
                       ),
                       Positioned(
                         top: 0,
-                        left: currentRate != 0 ? 90 : -1000,
-                        child: ClipOval(
-                          child: Container(
-                            width: 32,
-                            height: 30,
-                            // padding: const EdgeInsets.all(3),
-
+                        left: currentRate != 0 ? 85 : -1000,
+                        child: Container(
+                          width: 28,
+                          height: 20,
+                          decoration: BoxDecoration(
                             color: Colors.deepOrange,
-                            child: Center(
-                                child: Text('$currentRate',
-                                    style: TextStyle(color: Colors.white))),
+                            borderRadius: BorderRadius.circular(10),
                           ),
+                          child: Center(
+                              child: Text('$currentRate',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 11))),
                         ),
                       ),
                     ],
@@ -214,11 +210,14 @@ class _RateAllWidgetState extends State<RateAllWidget> {
               child: GestureDetector(
                 onTap: () {
                   showModalBottomSheet(
-                    isScrollControlled: true,
                     context: context,
+                    isScrollControlled: true,
                     builder: (context) {
-                      return CommentsWidget(
-                        idBook: widget.idBook,
+                      return FractionallySizedBox(
+                        heightFactor: 0.7,
+                        child: CommentsWidget(
+                          idBook: widget.idBook,
+                        ),
                       );
                     },
                   );

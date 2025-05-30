@@ -115,6 +115,10 @@ class _SearchPageState extends State<SearchPage> {
     } catch (e) {
       print('Lỗi khi phân tích dữ liệu truyện: $e');
     }
+    for (var item in stories) {
+      print('story1 ${item.title}: ${item.id}');
+    }
+    print('story1 }');
 
     return stories;
   }
@@ -216,9 +220,11 @@ class _SearchPageState extends State<SearchPage> {
                                     itemCount: _searchResults.length,
                                     itemBuilder: (context, index) {
                                       final story = _searchResults[index];
+                                      print('story $index: ${story.id}');
                                       return StoryTile(
                                         story: story,
                                         onTap: () {
+                                          print('id story: ${story.slug}');
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(

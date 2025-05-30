@@ -336,7 +336,8 @@ class _LibraryPageState extends State<LibraryPage> {
               itemBuilder: (context, index) {
                 final story = stories[index];
                 final progress = _progressMap[story.slug] ?? 0.0;
-                final idBook = _idBookMap[story.slug] ?? '';
+                final idBook = _idBookMap[story.slug] ??
+                    ''; // dựa vào slug để lấy ra id của sách
                 return Stack(
                   children: [
                     StoryTile(

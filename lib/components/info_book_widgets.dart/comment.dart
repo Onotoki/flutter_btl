@@ -107,6 +107,51 @@ class _CommentState extends State<Comment> {
     }
   }
 
+  void sendComment() async {
+    if (commentController.text.isNotEmpty && uid != null) {
+      print('object1');
+      if (rootCommentID != null) {
+        addComment(
+            userName: userName!,
+            userID: uid!,
+            bookID: widget.idBook,
+            content: '@$userTag ${commentController.text}',
+            parentID: rootCommentID);
+        await FirebaseFirestore.instance
+            .collection('books')
+            .doc(widget.idBook)
+            .collection('comments')
+            .doc(rootCommentID)
+            .update({
+          'replyCount': FieldValue.increment(1),
+        });
+        print('object12');
+      } else {
+        addComment(
+          userName: userName!,
+          userID: uid!,
+          bookID: widget.idBook,
+          content: commentController.text,
+        );
+        print('object13');
+      }
+      setState(() {
+        commentController.clear();
+        rootCommentID = null;
+        userTag = null;
+      });
+    } else if (uid == null) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Text('Vui lòng đăng nhập'),
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -146,64 +191,19 @@ class _CommentState extends State<Comment> {
             },
           ),
         ),
-        Container(
-          // color: Colors.grey[100],
-          padding: EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 20),
-          child: Material(
-            elevation: 4.0,
-            shadowColor: Colors.black,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom),
+        Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            padding: EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 20),
+            child: Material(
+              elevation: 4.0,
+              shadowColor: Colors.black,
+              borderRadius: BorderRadius.circular(16),
               child: TextField(
                 autofocus: false,
                 controller: commentController,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (value) async {
-                  if (commentController.text.isNotEmpty && uid != null) {
-                    print('object1');
-                    if (rootCommentID != null) {
-                      addComment(
-                          userName: userName!,
-                          userID: uid!,
-                          bookID: widget.idBook,
-                          content: '@$userTag ${commentController.text}',
-                          parentID: rootCommentID);
-                      await FirebaseFirestore.instance
-                          .collection('books')
-                          .doc(widget.idBook)
-                          .collection('comments')
-                          .doc(rootCommentID)
-                          .update({
-                        'replyCount': FieldValue.increment(1),
-                      });
-                      print('object12');
-                    } else {
-                      addComment(
-                        userName: userName!,
-                        userID: uid!,
-                        bookID: widget.idBook,
-                        content: commentController.text,
-                      );
-                      print('object13');
-                    }
-                    setState(() {
-                      commentController.clear();
-                      rootCommentID = null;
-                      userTag = null;
-                    });
-                  } else if (uid == null) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          content: Text('Vui lòng đăng nhập'),
-                        );
-                      },
-                    );
-                  }
-                },
+                textInputAction: TextInputAction.done,
                 onChanged: (value) {
                   setState(() {
                     if (value.isEmpty) {
@@ -213,6 +213,16 @@ class _CommentState extends State<Comment> {
                   });
                 },
                 decoration: InputDecoration(
+                  suffixIcon: Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 4.0),
+                    child: IconButton(
+                      onPressed: () {
+                        sendComment();
+                        FocusScope.of(context).unfocus();
+                      },
+                      icon: Icon(Icons.send),
+                    ), // _myIcon is a 48px-wide widget.
+                  ),
                   fillColor: Theme.of(context).colorScheme.secondary,
                   prefixText: userTag != null ? '@$userTag' : null,
                   prefixStyle: TextStyle(
