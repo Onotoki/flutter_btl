@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/search_page.dart';
 import 'package:btl/components/info_book_widgets.dart/reading_books.dart';
 import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';
@@ -43,41 +42,42 @@ class Person extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: user != null 
           ? _buildLoggedInUser(user, context)
-          : _buildGuestUser(),
+          : _buildGuestUser(context),
     );
   }
 
   Widget _buildLoggedInUser(User user, BuildContext context) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore.collection('users').doc(user.uid).snapshots(),
-      builder: (context, snapshot) {
-        // Xử lý loading state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildUserPlaceholder();
-        }
+  return StreamBuilder<DocumentSnapshot>(
+    stream: _firestore.collection('users').doc(user.email).snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return _buildUserPlaceholder();
+      }
 
-        // Xử lý lỗi
-        if (snapshot.hasError) {
-          debugPrint('Error loading user data: ${snapshot.error}');
-          return _buildUserInfo(
-            displayName: user.displayName ?? 'UserName',
-            email: user.email ?? 'No email',
-            photoUrl: user.photoURL,
-            context: context,
-          );
-        }
-
-        // Lấy dữ liệu từ Firestore
-        final userData = snapshot.data?.data() as Map<String, dynamic>?;
+      if (snapshot.hasError) {
+        debugPrint('Error loading user data: ${snapshot.error}');
         return _buildUserInfo(
-          displayName: userData?['nickname'] ?? user.displayName ?? 'UserName',
+          displayName: 'UserName', // Fallback nếu có lỗi
           email: user.email ?? 'No email',
-          photoUrl: userData?['profileImage'] ?? user.photoURL,
+          photoUrl: user.photoURL,
           context: context,
         );
-      },
-    );
-  }
+      }
+
+      // Ưu tiên hiển thị nickname từ Firestore, nếu không có thì dùng email
+      final userData = snapshot.data?.data() as Map<String, dynamic>?;
+      final nickname = userData?['nickname'];
+      final email = user.email ?? 'No email';
+
+      return _buildUserInfo(
+        displayName: nickname ?? email.split('@').first, // Fallback dùng phần trước @ của email
+        email: email,
+        photoUrl: userData?['profileImage'] ?? user.photoURL,
+        context: context,
+      );
+    },
+  );
+} 
 
   Widget _buildUserInfo({
     required String displayName,
@@ -136,7 +136,7 @@ class Person extends StatelessWidget {
         : AssetImage(url);
   }
 
-  Widget _buildGuestUser() {
+  Widget _buildGuestUser(BuildContext context) {
     return Row(
       children: [
         const CircleAvatar(
@@ -155,11 +155,20 @@ class Person extends StatelessWidget {
                 color: Colors.grey[600],
               ),
             ),
-            Text(
-              'Đăng nhập để mở khóa tính năng',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
+            GestureDetector(
+              onTap: (){
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const IntroPage()),
+                  (_) => false,
+                );    
+              },
+              child: Text(
+                'Đăng nhập để mở khóa tính năng',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
               ),
             ),
           ],
@@ -260,7 +269,7 @@ class Person extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(Icons.color_lens, color: textColor),
-        title: Text('Chế độ tối', style: TextStyle(color: textColor)),
+        title: Text('Chế độ sáng/tối', style: TextStyle(color: textColor)),
         trailing: Switch(
           value: isDarkTheme,
           onChanged: (value) {

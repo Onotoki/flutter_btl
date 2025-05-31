@@ -119,26 +119,28 @@ class _RatingSelectorState extends State<RatingSelector> {
             }
             return SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(
-                  items.length,
-                  (index) {
-                    final item = items[index];
-                    return RateWidget(
-                      isSelected: (selectedIndex == index) ||
-                          (isRate && selectedIndex == index),
-                      onTap: () {
-                        if (!isRate) {
-                          setState(() {
-                            selectedIndex = index;
-                          });
-                        }
-                      },
-                      imageIcon: item['icon'],
-                      textIcon: item['text'],
-                      activeColor: item['color'],
-                    );
-                  },
+              child: Expanded(
+                child: Row(
+                  children: List.generate(
+                    items.length,
+                    (index) {
+                      final item = items[index];
+                      return RateWidget(
+                        isSelected: (selectedIndex == index) ||
+                            (isRate && selectedIndex == index),
+                        onTap: () {
+                          if (!isRate) {
+                            setState(() {
+                              selectedIndex = index;
+                            });
+                          }
+                        },
+                        imageIcon: item['icon'],
+                        textIcon: item['text'],
+                        activeColor: item['color'],
+                      );
+                    },
+                  ),
                 ),
               ),
             );
