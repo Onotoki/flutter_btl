@@ -122,7 +122,7 @@ class _RateAllWidgetState extends State<RateAllWidget> {
                                 height: 18,
                               ),
                               Expanded(
-                                flex: 1,
+                                flex: 0,
                                 child: RatingSelector(
                                   idBook: widget.idBook,
                                   currentRate:
