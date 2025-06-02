@@ -266,12 +266,17 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                   }
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
-                                    return Text("Loading");
+                                    return _buildReadNowButton(idBook);
                                   }
+                                  // if (snapshot.hasData &&
+                                  //     snapshot.data != null &&
+                                  //     snapshot.data!.exists &&
+                                  //     snapshot.data!.data() != null) {
+                                  // không thể gọi snapshot.exists, vì exists là thuộc tính của lớp DocumentSnapshot, chứ không phải của AsyncSnapshot<DocumentSnapshot>.
+                                  // snapshot.data mới chính là DocumentSnapshot
+                                  // snapshot.data!.exists để phân biệt “document có thật sự tồn tại hay chưa
                                   if (snapshot.hasData &&
-                                      snapshot.data != null &&
-                                      snapshot.data!.exists &&
-                                      snapshot.data!.data() != null) {
+                                      snapshot.data!.exists) {
                                     final data = snapshot.data!.data()!;
                                     continueRead = int.parse(
                                         data['chapters_reading']

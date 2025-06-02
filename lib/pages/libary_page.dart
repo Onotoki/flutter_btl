@@ -1,4 +1,5 @@
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
+import 'package:btl/pages/libary_tab.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -6,21 +7,7 @@ import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/pages/story_detail_page.dart';
-import 'package:btl/pages/categories_page.dart';
 import 'package:flutter/services.dart';
-
-// Define a class to represent the state of slug data from Firebase
-class SlugDataState {
-  final Map<String, List<String>> slug;
-  Map<String, double>? progressMap; // Map slug to progress
-  Map<String, String> idBook; // Map slug to progress
-
-  SlugDataState({
-    required this.slug,
-    required this.idBook,
-    this.progressMap,
-  });
-}
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -30,421 +17,112 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
-  final Map<String, List<Story>> _categories = {
-    'Đang đọc': [],
-    'Yêu thích': [],
-  };
-
+  List<Map<String, dynamic>> listBooksReading = [];
+  List<Map<String, dynamic>> listBooksFavorite = [];
+  Widget? listReading;
+  Widget? listFavorite;
   bool _isLoading = true;
-  String _errorMessage = '';
-  Map<String, double> _progressMap = {}; // Map slug to progress
-  Map<String, String> _idBookMap = {};
   String? uid;
-  String _debugInfo = '';
-  bool hasReading = false;
-  bool hasFavorite = false;
 
-  // Convert getSlug to Stream
-  Stream<SlugDataState> getSlugData(String uid, {required bool isReading}) {
-    print("uid $uid, isReading: $isReading");
-    final collectionName = isReading ? 'books_reading' : 'books_favorite';
-    final slugKey = isReading ? 'Đang đọc' : 'Yêu thích';
-
-    return FirebaseFirestore.instance
-        .collection('user_reading')
-        .doc(uid)
-        .collection(collectionName)
-        .snapshots()
-        .map((QuerySnapshot querySnapshot) {
-      Map<String, List<String>> slug = {slugKey: []};
-      Map<String, double>? progressMap = isReading ? {} : null;
-      Map<String, String> idBook = {};
-
-      for (var doc in querySnapshot.docs) {
-        String docSlug = doc['slug'];
-        slug[slugKey]!.add(docSlug);
-        idBook[docSlug] = doc['id_book'];
-        if (isReading) {
-          progressMap![docSlug] = doc['process']?.toDouble() ?? 0.0;
-        }
-      }
-
-      print('Stream emitted: slug=$slug, progressMap=$progressMap');
-      return SlugDataState(
-        slug: slug,
-        progressMap: isReading ? progressMap : {},
-        idBook: idBook,
-      );
-    }).handleError((e) {
-      print('Lỗi khi lấy dữ liệu Firebase: $e');
-      return SlugDataState(
-        slug: {slugKey: []},
-        progressMap: isReading ? {} : {},
-        idBook: {},
-      );
-    });
-  }
-
-  Future<void> deleteSlug(String idBook, String subCollection) async {
-    FirebaseFirestore.instance
-        .collection('user_reading')
-        .doc(uid)
-        .collection(subCollection)
-        .doc(idBook)
-        .delete();
-  }
-
-  void getData() {
+  @override
+  void initState() {
+    super.initState();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      setState(() {
-        _errorMessage = 'Chưa đăng nhập';
-        _isLoading = false;
-      });
+      // loadData();
       return;
     }
-
     uid = user.uid;
-
-    // Lắng nghe Stream cho books_reading (Đang đọc)
-    getSlugData(uid!, isReading: true).listen((SlugDataState state) {
-      bool slugsChanged = _categories['Đang đọc']!.length !=
-              state.slug['Đang đọc']!.length ||
-          !_categories['Đang đọc']!
-              .every((story) => state.slug['Đang đọc']!.contains(story.slug));
-
-      setState(() {
-        _progressMap = state.progressMap!;
-        _idBookMap = {
-          ..._idBookMap,
-          ...state.idBook
-        }; // Gộp idBook, ưu tiên Đang đọc
-        if (slugsChanged && state.slug['Đang đọc']!.isNotEmpty) {
-          _isLoading = true;
-          _loadMultipleComics(state.slug['Đang đọc']!, 'Đang đọc');
-        } else if (state.slug['Đang đọc']!.isEmpty) {
-          _categories['Đang đọc'] = [];
-          // Chỉ tắt _isLoading nếu cả hai danh sách đều rỗng
-          if (_categories['Yêu thích']!.isEmpty) {
-            _isLoading = false;
-          }
-        }
-      });
-    }, onError: (e) {
-      setState(() {
-        _errorMessage = 'Không thể tải danh sách Đang đọc: $e';
-        _isLoading = false;
-        _debugInfo = 'Lỗi khi tải Đang đọc: $e';
-      });
-    });
-
-    // Lắng nghe Stream cho books_favorite (Yêu thích)
-    getSlugData(uid!, isReading: false).listen((SlugDataState state) {
-      bool slugsChanged = _categories['Yêu thích']!.length !=
-              state.slug['Yêu thích']!.length ||
-          !_categories['Yêu thích']!
-              .every((story) => state.slug['Yêu thích']!.contains(story.slug));
-
-      setState(() {
-        _idBookMap = {
-          ..._idBookMap,
-          ...state.idBook
-        }; // Gộp idBook, ưu tiên Yêu thích
-        if (slugsChanged && state.slug['Yêu thích']!.isNotEmpty) {
-          _isLoading = true;
-          _loadMultipleComics(state.slug['Yêu thích']!, 'Yêu thích');
-        } else if (state.slug['Yêu thích']!.isEmpty) {
-          _categories['Yêu thích'] = [];
-          // Chỉ tắt _isLoading nếu cả hai danh sách đều rỗng
-          if (_categories['Đang đọc']!.isEmpty) {
-            _isLoading = false;
-          }
-        }
-      });
-    }, onError: (e) {
-      setState(() {
-        _errorMessage = 'Không thể tải danh sách Yêu thích: $e';
-        _isLoading = false;
-        _debugInfo = 'Lỗi khi tải Yêu thích: $e';
-      });
-    });
+    _isLoading = false;
   }
 
-  Future<Story?> _loadHomeData(String slug) async {
-    final debugLogs = StringBuffer('Đang tải truyện từ mục $slug...\n');
-    try {
-      final newUpdateResult = await OTruyenApi.getComicDetail(slug);
-      debugLogs.write('API Response: $newUpdateResult\n');
-      print('API Response for $slug: $newUpdateResult');
-
-      if (newUpdateResult == null || newUpdateResult is! Map<String, dynamic>) {
-        debugLogs.write('API trả về dữ liệu không hợp lệ hoặc null\n');
-        print(debugLogs);
-        return null;
-      }
-
-      Story? story = _parseStoriesData(newUpdateResult, debugLogs);
-      if (story == null) {
-        debugLogs.write('No story parsed\n');
-      }
-      print(debugLogs);
-      return story;
-    } catch (e) {
-      debugLogs.write('Lỗi khi tải dữ liệu truyện $slug: $e\n');
-      print(debugLogs);
-      return null;
-    }
-  }
-
-  Future<void> _loadMultipleComics(List<String> slugs, String category) async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-      _debugInfo = '';
-    });
-
-    final debugLogs =
-        StringBuffer('Đang lấy tất cả dữ liệu danh mục $category...\n');
-    final List<Story> stories = [];
-
-    try {
-      for (String slug in slugs) {
-        Story? story = await _loadHomeData(slug);
-        if (story != null) {
-          stories.add(story);
-        } else {
-          debugLogs.write('Failed to load story for slug: $slug\n');
-        }
-      }
-
-      setState(() {
-        _categories[category] = stories;
-        _isLoading = false;
-        _debugInfo = debugLogs.toString();
-        print(debugLogs);
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Không thể tải dữ liệu danh mục $category: $e';
-        _isLoading = false;
-        _debugInfo = debugLogs.toString();
-        print('Lỗi khi tải dữ liệu danh mục $category: $e');
-      });
-    }
-  }
-
-  Story? _parseStoriesData(
-      Map<String, dynamic>? result, StringBuffer debugLogs) {
-    if (result == null) {
-      debugLogs.write('Dữ liệu API là null\n');
-      return null;
-    }
-    try {
-      if (result.containsKey('item') &&
-          result['item'] is Map<String, dynamic>) {
-        debugLogs.write('Parsing single item: ${result['item']}\n');
-        return Story.fromJson(result['item']);
-      } else {
-        debugLogs.write('No item found in data\n');
-      }
-    } catch (e) {
-      debugLogs.write('Lỗi khi phân tích dữ liệu truyện: $e\n');
-    }
-    return null;
-  }
-
-  Story? _parseStories(dynamic data) {
-    if (data == null) {
-      return null;
-    }
-    try {
-      if (data is List) {
-        print('Parsing ${data.length} stories from data');
-        if (data.isNotEmpty && data[0] is Map) {
-          print('Sample item 0: ${data[0].keys.toList()}');
-          if (data.length > 1) {
-            print('Sample item 1: ${data[1].keys.toList()}');
-          }
-        }
-
-        for (var item in data) {
-          try {
-            if (item is Map<String, dynamic>) {
-              return Story.fromJson(item);
-            }
-          } catch (e) {
-            print('Error parsing story item: $e, item: $item');
-          }
-        }
-      }
-    } catch (e) {
-      print('Error parsing stories data: $e');
-    }
-    return null;
-  }
-
-  Widget _buildSectionTitle(
-      BuildContext context, String title, List<Story> stories) {
-    return GestureDetector(
-      onTap: () {
-        if (title == "Thể loại") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CategoriesPage()),
-          );
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20, left: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      initialIndex: 0,
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 10,
+          automaticallyImplyLeading: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(40),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              child: Container(
+                height: 40,
+                margin: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                child: TabBar(
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  indicator: BoxDecoration(
+                    color: Colors.green,
+                    // color: Theme.of(context).colorScheme.onSurface,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
+                  labelColor: Colors.white,
+                  // unselectedLabelColor: Colors.greyơ,
+                  tabs: [
+                    TabItem(title: 'Đang đọc'),
+                    TabItem(title: 'Yêu thích'),
+                  ],
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 20,
-                ),
-              ],
+              ),
             ),
-          ],
+          ),
+          // body: uid == null
+          //     ? Center(
+          //         child: Text('Chưa đăng nhập'),
+          //       )
+          //     : _isLoading
+          //         ? const Center(child: CircularProgressIndicator())
+          //         : SafeArea(
+          //             // child: Column(
+          //             //   children: [
+          //             //     buildTile('Đang đọc'),
+          //             //     // Row(
+          //             //     //   children: [
+          //             //     //     readingBooks('books_reading'),
+          //             //     //   ],
+          //             //     // ),
+          //             //     // buildTile('Yêu thích'),
+          //             //     // Row(
+          //             //     //   children: [
+          //             //     //     readingBooks('books_favorite'),
+          //             //     //   ],
+          //             //     // ),
+          //             //     readingBooks('books_reading'),
+          //             //   ],
+          //             // ),
+        ),
+        //             ),
+        body: Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: TabBarView(children: [
+            LibraryTab(category: 'books_reading', uid: uid!),
+            LibraryTab(category: 'books_favorite', uid: uid!)
+          ]),
         ),
       ),
     );
   }
 
-  Widget _buildHorizontalStoryList(List<Story> stories, String type) {
-    double a = 15;
-    if (type != 'Đang đọc') {
-      a = -100;
-    }
-    return SizedBox(
-      height: 220,
-      child: stories.isEmpty
-          ? const Center(child: Text('Chưa có chuyện nào'))
-          : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: stories.length,
-              itemBuilder: (context, index) {
-                final story = stories[index];
-                final progress = _progressMap[story.slug] ?? 0.0;
-                final idBook = _idBookMap[story.slug] ??
-                    ''; // dựa vào slug để lấy ra id của sách
-                return Stack(
-                  children: [
-                    StoryTile(
-                      story: story,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => StoryDetailPage(story: story),
-                          ),
-                        );
-                      },
-                      onLongPress: () async {
-                        await HapticFeedback.vibrate();
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    story.title,
-                                    style: TextStyle(fontSize: 20),
-                                  ),
-                                  SizedBox(
-                                    height: 20,
-                                  ),
-                                  Row(
-                                    children: [
-                                      Button_Info(
-                                        text: 'Xoá truyện',
-                                        backgroundColor: Colors.green,
-                                        foregroundColor: Colors.white,
-                                        flex: 1,
-                                        ontap: () {
-                                          if (type == 'Đang đọc') {
-                                            deleteSlug(idBook, 'books_reading');
-                                          } else {
-                                            deleteSlug(
-                                                idBook, 'books_favorite');
-                                          }
-                                          Navigator.pop(context);
-                                        },
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    Positioned(
-                      top: 10,
-                      left: a,
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${progress.toStringAsFixed(2)}%',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+  Widget TabItem({required String title}) {
+    return Tab(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    print('chạy init');
-    getData();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _errorMessage.isNotEmpty
-            ? Center(child: Text(_errorMessage))
-            : Scaffold(
-                body: SafeArea(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        for (var category in _categories.entries) ...[
-                          _buildSectionTitle(
-                              context, category.key, category.value),
-                          _buildHorizontalStoryList(
-                              category.value, category.key),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              );
   }
 }

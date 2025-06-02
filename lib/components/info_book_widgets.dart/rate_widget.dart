@@ -113,176 +113,180 @@ class _RateAllWidgetState extends State<RateAllWidget> {
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text("Loading");
+          return Rate();
         }
-
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data?.data() as Map<String, dynamic>?;
+          final currentRate = data!['rate'];
+          final countRate = data['count'];
+          return Rate(currentRate: currentRate, countRate: countRate);
+        }
         // Lấy điểm và số lượng đánh giá
+        return Rate();
+      },
+    );
+  }
 
-        final data = snapshot.data?.data() as Map<String, dynamic>?;
-        final currentRate = data?['rate'] ?? 0;
-        final countRate = data?['count'] ?? 0;
-
-        return Row(
-          children: [
-            Expanded(
-              flex: 1,
-              child: GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    builder: (context) {
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                            top: 8.0, left: 8, right: 8, bottom: 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: 5),
-                            Text(
-                              widget.title,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              currentRate != 0
-                                  ? '$currentRate/ $countRate đánh giá'
-                                  : 'Chưa có đánh giá nào',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 18),
-                            RatingSelector(
-                              idBook: widget.idBook,
-                              currentRate: double.parse(currentRate.toString()),
-                              countRate: countRate,
-                            ),
-                          ],
+  Widget Rate({double currentRate = 0, int countRate = 0}) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.only(
+                        top: 8.0, left: 8, right: 8, bottom: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 5),
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      );
-                    },
-                  );
-                },
-                child: SizedBox(
-                  height: 60,
-                  child: Stack(
-                    alignment: AlignmentDirectional.bottomCenter,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.tag_faces_rounded,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          const Text(
-                            'Đánh giá',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        top: 0,
-                        left: currentRate != 0 ? 85 : -1000,
-                        child: Container(
-                          width: 28,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrange,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                              child: Text('$currentRate',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 11))),
+                        const SizedBox(height: 5),
+                        Text(
+                          currentRate != 0
+                              ? '$currentRate/ $countRate đánh giá'
+                              : 'Chưa có đánh giá nào',
+                          style: const TextStyle(fontSize: 16),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 1,
-              child: GestureDetector(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    builder: (context) {
-                      return FractionallySizedBox(
-                        heightFactor: 0.7,
-                        child: CommentsWidget(
+                        const SizedBox(height: 18),
+                        RatingSelector(
                           idBook: widget.idBook,
+                          currentRate: double.parse(currentRate.toString()),
+                          countRate: countRate,
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   );
                 },
-                child: Container(
-                  height: 60,
-                  alignment: Alignment.center,
-                  decoration:
-                      BoxDecoration(borderRadius: BorderRadius.circular(50)),
-                  child: Column(
+              );
+            },
+            child: SizedBox(
+              height: 60,
+              child: Stack(
+                alignment: AlignmentDirectional.bottomCenter,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.messenger,
+                        Icons.tag_faces_rounded,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      const Text('Bình luận'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 1,
-              child: GestureDetector(
-                onTap: () {
-                  if (uid == null) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return const AlertDialog(
-                          content: Text('Vui lòng đăng nhập'),
-                        );
-                      },
-                    );
-                  } else {
-                    // toggleFavorite(widget.idBook, uid!, widget.slug);
-                    setState(() {
-                      isFavorite = !isFavorite;
-                    });
-                  }
-                },
-                child: Container(
-                  height: 60,
-                  alignment: Alignment.center,
-                  decoration:
-                      BoxDecoration(borderRadius: BorderRadius.circular(50)),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.favorite,
-                        color: isFavorite
-                            ? Colors.red
-                            : Theme.of(context).colorScheme.onSurface,
+                      const Text(
+                        'Đánh giá',
+                        style: TextStyle(fontSize: 14),
                       ),
-                      const Text('Yêu thích'),
                     ],
                   ),
-                ),
+                  Positioned(
+                    top: 0,
+                    left: currentRate != 0 ? 85 : -1000,
+                    child: Container(
+                      width: 28,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                          child: Text('$currentRate',
+                              style: TextStyle(
+                                  color: Colors.white, fontSize: 11))),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (context) {
+                  return FractionallySizedBox(
+                    heightFactor: 0.7,
+                    child: CommentsWidget(
+                      idBook: widget.idBook,
+                    ),
+                  );
+                },
+              );
+            },
+            child: Container(
+              height: 60,
+              alignment: Alignment.center,
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(50)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.messenger,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const Text('Bình luận'),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: GestureDetector(
+            onTap: () {
+              if (uid == null) {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return const AlertDialog(
+                      content: Text('Vui lòng đăng nhập'),
+                    );
+                  },
+                );
+              } else {
+                // toggleFavorite(widget.idBook, uid!, widget.slug);
+                setState(() {
+                  isFavorite = !isFavorite;
+                });
+              }
+            },
+            child: Container(
+              height: 60,
+              alignment: Alignment.center,
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(50)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: isFavorite
+                        ? Colors.red
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const Text('Yêu thích'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

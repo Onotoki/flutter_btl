@@ -1,5 +1,6 @@
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
+import 'package:btl/components/info_book_widgets.dart/comment_chaptter.dart';
 import 'package:btl/models/chapter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -208,7 +209,7 @@ class _ChapterPageState extends State<ChapterPage> {
   void _restoreScrollPosition(double percentage) async {
     print('percentage $percentage');
     print('chạy hàm delay');
-    // await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 2));
     final maxExtent = _scrollController.position.maxScrollExtent;
     final targetOffset = (percentage / 100.0) * maxExtent;
     print('Restoring: maxExtent=$maxExtent, targetOffset=$percentage');
@@ -317,87 +318,94 @@ class _ChapterPageState extends State<ChapterPage> {
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Center(child: Text(errorMessage))
-              : SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  controller: _scrollController,
+              : SafeArea(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Padding chỉ áp dụng cho text/info
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
+                      SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        controller: _scrollController,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (debugInfo.isNotEmpty)
-                              GestureDetector(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Debug Info'),
-                                      content: SingleChildScrollView(
-                                        child: Text(debugInfo),
+                            // Padding chỉ áp dụng cho text/info
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (debugInfo.isNotEmpty)
+                                    GestureDetector(
+                                      onTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Debug Info'),
+                                            content: SingleChildScrollView(
+                                              child: Text(debugInfo),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('Đóng'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        color: Colors.amber.withOpacity(0.3),
+                                        child:
+                                            const Text('Xem thông tin Debug'),
                                       ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('Đóng'),
-                                        ),
-                                      ],
                                     ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  color: Colors.amber.withOpacity(0.3),
-                                  child: const Text('Xem thông tin Debug'),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Chương ${widget.chapterNumber}: ${widget.chapterTitle}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                            ),
+
+                            // PHẦN ẢNH không có padding để ảnh full width
+                            if (contentImages.isNotEmpty) ...[
+                              for (var imageUrl in contentImages)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 0.0),
+                                  child: CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.fitWidth,
+                                    width: double.infinity,
+                                    errorWidget: (context, url, error) =>
+                                        Icon(Icons.error),
+                                  ),
+                                ),
+                            ] else
+                              // Nếu là văn bản thì thêm padding riêng
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  textContent,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    height: 1.6,
+                                  ),
                                 ),
                               ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Chương ${widget.chapterNumber}: ${widget.chapterTitle}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 20),
+                            SizedBox(
+                              height: 5,
+                            )
                           ],
                         ),
                       ),
-
-                      // PHẦN ẢNH không có padding để ảnh full width
-                      if (contentImages.isNotEmpty) ...[
-                        for (var imageUrl in contentImages)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 0.0),
-                            child: CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.fitWidth,
-                              width: double.infinity,
-                              errorWidget: (context, url, error) =>
-                                  Icon(Icons.error),
-                            ),
-                          ),
-                      ] else
-                        // Nếu là văn bản thì thêm padding riêng
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            textContent,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              height: 1.6,
-                            ),
-                          ),
-                        ),
-                      SizedBox(
-                        height: 5,
-                      )
                     ],
                   ),
                 ),
