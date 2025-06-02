@@ -318,10 +318,10 @@ class _ChapterPageState extends State<ChapterPage> {
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Center(child: Text(errorMessage))
-              : SafeArea(
-                  child: Column(
-                    children: [
-                      SingleChildScrollView(
+              : Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         controller: _scrollController,
                         child: Column(
@@ -406,8 +406,8 @@ class _ChapterPageState extends State<ChapterPage> {
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
     );
   }

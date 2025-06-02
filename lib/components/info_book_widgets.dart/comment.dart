@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -375,7 +377,20 @@ class _CommentWidgetState extends State<CommentWidget> {
             children: [
               CircleAvatar(
                 radius: 15,
-                backgroundImage: AssetImage('assets/image/avatar.jpg'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                    // color: Colors.green[100]!.withOpacity(0.4),
+                    color: Colors.green[300],
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${comment['userName'][0]}',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                // backgroundImage: AssetImage('assets/image/avatar.jpg'),
               ),
               Expanded(
                 flex: 1,
