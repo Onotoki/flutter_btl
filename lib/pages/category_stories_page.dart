@@ -9,46 +9,38 @@ import 'package:btl/utils/content_filter.dart';
 class CategoryStoriesPage extends StatefulWidget {
   final Category category;
 
-  const CategoryStoriesPage({
-    super.key,
-    required this.category,
-  });
+  const CategoryStoriesPage({super.key, required this.category});
 
   @override
   State<CategoryStoriesPage> createState() => _CategoryStoriesPageState();
 }
 
 class _CategoryStoriesPageState extends State<CategoryStoriesPage> {
-  List<Story> stories = [];
-  bool isLoading = true;
-  String errorMessage = '';
-  String debugInfo = '';
+  List<Story> stories = []; //Danh sách truyện thuộc thể loại được tải từ API.
+  bool isLoading = true; // Trạng thái tải dữ liệu
+  String errorMessage = ''; // Lưu lỗi nếu có
 
   @override
   void initState() {
     super.initState();
-    _loadStories();
+    _loadStories(); //Hàm tải dữ liệu khi khởi động trang
   }
 
   Future<void> _loadStories() async {
+    //Dùng lệnh gọi API để tải danh sách truyện theo thể loại được chọn
     try {
+      //Kết quả sẽ lưu vào result và await giúp đợi phản hồi từ API trước khi tiếp tục xử lý
       final result = await OTruyenApi.getComicsByCategory(widget.category.slug);
 
+      //Giúp chuyển đổi kiểu dữ liệu sang danh sách List và nếu API trả về null thì mặc định là danh sách rỗng
+      final items = result['items'] as List<dynamic>? ?? [];
+
       setState(() {
-        List<Story> loadedStories = [];
-        if (result.containsKey('items') && result['items'] is List) {
-          // Tải và phân tích truyện từ API
-          loadedStories = _parseStories(result['items']);
-
-          // Lọc bỏ truyện người lớn
-          int beforeFilter = loadedStories.length;
-          loadedStories = ContentFilter.filterStories(loadedStories);
-          debugInfo =
-              'Filtered out ${beforeFilter - loadedStories.length} adult stories';
-          print(debugInfo);
-        }
-
-        stories = loadedStories;
+        //Lọc bỏ truyện có nội dung không phù hợp.
+        stories = ContentFilter.filterStories(
+          //Chuyển từng truyện từ JSON sang Story và sau đó chuyển sang List để sử dụng
+          items.map((data) => Story.fromJson(data)).toList(),
+        );
         isLoading = false;
       });
     } catch (e) {
@@ -59,63 +51,37 @@ class _CategoryStoriesPageState extends State<CategoryStoriesPage> {
     }
   }
 
-  // Helper method để chuyển đổi dữ liệu JSON thành danh sách Story
-  List<Story> _parseStories(List<dynamic> data) {
-    List<Story> result = [];
-
-    try {
-      for (var item in data) {
-        if (item is Map<String, dynamic>) {
-          result.add(Story.fromJson(item));
-        }
-      }
-    } catch (e) {
-      print('Lỗi khi phân tích dữ liệu truyện: $e');
-    }
-
-    return result;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.category.name),
-      ),
+      appBar: AppBar(title: Text(widget.category.name)),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Center(child: Text(errorMessage))
               : stories.isEmpty
-                  ? const Center(
-                      child: Text('Không có truyện nào trong thể loại này'))
+                  ? const Center(child: Text('Không có truyện nào'))
                   : Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          mainAxisSpacing: 8, // giảm khoảng cách dọc
-                          crossAxisSpacing: 8, // giữ nguyên khoảng cách ngang
-                          childAspectRatio: 0.55, // tăng tỉ lệ => ô thấp hơn,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 0.55,
                         ),
                         itemCount: stories.length,
-                        itemBuilder: (context, index) {
-                          final story = stories[index];
-                          return StoryTile(
-                            story: story,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => StoryDetailPage(
-                                    story: story,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                        itemBuilder: (context, index) => StoryTile(
+                          story: stories[index],
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  StoryDetailPage(story: stories[index]),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
     );

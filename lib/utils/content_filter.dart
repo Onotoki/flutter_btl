@@ -9,7 +9,6 @@ class ContentFilter {
     '16+',
     '18+',
     'ecchi',
-    'mature',
     'smut',
     'manhua',
     'shounen-ai',
@@ -18,10 +17,9 @@ class ContentFilter {
     'soft-yuri',
     'josei',
     'seinen',
-    'harem',
-    'gender-bender,'
-        'doujinshi',
-    'dam-my',
+    'gender-bender',
+    'doujinshi',
+    'dam-my'
   ];
 
   // Kiểm tra xem một thể loại có phải là thể loại người lớn không
@@ -32,22 +30,11 @@ class ContentFilter {
 
   // Kiểm tra xem một truyện có thuộc thể loại người lớn không
   static bool isAdultStory(Story story) {
-    // Kiểm tra xem truyện có thể loại người lớn không
-    if (story.categories.isNotEmpty) {
-      for (String category in story.categories) {
-        if (isAdultCategory(category)) {
-          return true;
-        }
-      }
-    }
-
-    // Kiểm tra xem tiêu đề truyện có chứa từ khóa người lớn không
-    final lowerCaseTitle = story.title.toLowerCase();
-    if (adultKeywords.any((keyword) => lowerCaseTitle.contains(keyword))) {
+    if (story.categories.any(isAdultCategory)) {
       return true;
     }
-
-    return false;
+    final lowerCaseTitle = story.title.toLowerCase();
+    return adultKeywords.any((keyword) => lowerCaseTitle.contains(keyword));
   }
 
   // Lọc danh sách truyện, loại bỏ nội dung người lớn

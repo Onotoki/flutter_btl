@@ -4,6 +4,7 @@ import 'package:btl/models/category.dart';
 import 'package:btl/pages/category_stories_page.dart';
 import 'package:btl/utils/content_filter.dart';
 
+//Khai báo trang thể loại
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
@@ -12,70 +13,62 @@ class CategoriesPage extends StatefulWidget {
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
-  List<Category> categories = [];
-  bool isLoading = true;
-  String errorMessage = '';
-  String debugInfo = '';
+  List<Category> categories = []; // Danh sách thể loại
+  bool isLoading = true; // Trạng thái tải dữ liệu
+  String errorMessage = ''; // Lưu lỗi nếu có
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _loadCategories(); // Hàm tải dữ liệu khi khởi động trang
   }
 
   Future<void> _loadCategories() async {
-    String logs = '';
+    List<String> filteredOutCategories = []; // Danh sách thể loại bị loại bỏ
+
+    //Dùng lệnh gọi API để tải danh sách các thể loại
     try {
-      logs += 'Starting to load categories...\n';
-      final result = await OTruyenApi.getCategories();
+      final result = await OTruyenApi
+          .getCategories(); //Kết quả sẽ lưu vào result và await giúp đợi phản hồi từ API trước khi tiếp tục xử lý
 
-      logs += 'Categories API Response keys: ${result.keys.toList()}\n';
+      //Giúp chuyển đổi kiểu dữ liệu sang danh sách List và nếu API trả về null thì mặc định là danh sách rỗng
+      final items = result['items'] as List<dynamic>? ?? [];
 
-      // Xử lý theo cấu trúc API OTruyen - đúng cấu trúc trả về là "items" không phải "categories"
-      if (result.containsKey('items') && result['items'] is List) {
-        logs += 'Found items list in response\n';
-        List<dynamic> categoriesData = result['items'];
-        logs += 'Categories count: ${categoriesData.length}\n';
-
-        List<Category> loadedCategories = [];
-        for (var categoryData in categoriesData) {
-          if (categoryData is Map<String, dynamic>) {
-            try {
-              Category category = Category.fromJson(categoryData);
-
-              // Kiểm tra xem có phải là thể loại người lớn không
-              if (!ContentFilter.isAdultCategory(category.name)) {
-                loadedCategories.add(category);
-              } else {
-                logs += 'Filtered out adult category: ${category.name}\n';
-              }
-            } catch (e) {
-              logs += 'Error parsing category: $e\n';
-            }
-          }
+      categories = items
+          //Lọc ra các phần tử có kiểu Map<String, dynamic>, đảm bảo chỉ xử lý dữ liệu JSON hợp lệ.
+          .whereType<Map<String, dynamic>>()
+          //Chuyển đổi từng phần tử JSON thành một đối tượng Category bằng phương thức Category.fromJson().
+          .map((data) =>
+              Category.fromJson(data)) // Chuyển đổi thành đối tượng Category
+          // Trước khi chuyển đổi:
+          // {
+          //   "items": [
+          //     {"name": "Hành động", "slug": "hanh-dong"},
+          //     {"name": "Ecchi", "slug": "ecchi"},
+          //     {"name": "Phiêu lưu", "slug": "phieu-luu"}
+          //   ]
+          // }
+          // Sau khi chuyển đổi:
+          // [
+          //   Category(name: "Hành động", slug: "hanh-dong"),
+          //   Category(name: "Ecchi", slug: "ecchi"),
+          //   Category(name: "Phiêu lưu", slug: "phieu-luu")
+          // ]
+          .where((category) {
+        final isAdult = ContentFilter.isAdultCategory(category.name);
+        if (isAdult) {
+          filteredOutCategories.add(category.name); // Ghi lại thể loại bị lọc
         }
+        return !isAdult; // Chỉ giữ lại thể loại không phải người lớn
+      }).toList(); //Chuyển where về lại thành danh sách List
 
-        setState(() {
-          categories = loadedCategories;
-          isLoading = false;
-          debugInfo = logs;
-        });
+      print('Danh sách thể loại người lớn đã bị lọc: $filteredOutCategories');
 
-        logs +=
-            'Successfully loaded ${categories.length} categories after filtering\n';
-        print(logs);
-      } else {
-        logs +=
-            'No items found in response structure. Available keys: ${result.keys.toList()}\n';
-        throw Exception('Invalid API response structure');
-      }
+      setState(() => isLoading = false);
     } catch (e) {
-      logs += 'Error loading categories: $e\n';
-      print(logs);
       setState(() {
         errorMessage = 'Không thể tải danh sách thể loại: $e';
         isLoading = false;
-        debugInfo = logs;
       });
     }
   }
@@ -84,64 +77,53 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thể loại truyện'),
-      ),
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Thể loại truyện',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          )),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator()) //Hiển thị vòng quay khi tải
           : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage))
+              ? Center(child: Text(errorMessage)) // Hiển thị lỗi nếu có
               : categories.isEmpty
                   ? const Center(child: Text('Không có thể loại nào'))
                   : GridView.builder(
                       padding: const EdgeInsets.all(10),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.5,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2, //Mỗi hàng có hai cột
+                        childAspectRatio:
+                            1.5, //Tỉ lệ chiều rộng, chiều cao (giúp các ô không quá vuông)
+                        crossAxisSpacing: 10, //Khoảng cách ngang
+                        mainAxisSpacing: 10, //Khoảng cách dọc
                       ),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        return _buildCategoryCard(categories[index]);
-                      },
+                      itemCount:
+                          categories.length, //Đếm số phần tử trong danh sách
+
+                      //Hàm để hiển thị mỗi thể loại
+                      itemBuilder: (context, index) =>
+                          _buildCategoryCard(categories[index]),
                     ),
     );
   }
 
   Widget _buildCategoryCard(Category category) {
     return Card(
-      elevation: 2,
+      elevation: 10, //Tạo hiệu ứng nổi lên một chút
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CategoryStoriesPage(category: category),
-            ),
-          );
-        },
-        child: Padding(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => CategoryStoriesPage(category: category)),
+        ),
+        child: Container(
           padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                category.name,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                '${category.stories} truyện',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
+          alignment: Alignment.center, // Căn giữa nội dung trong ô
+          child: Text(
+            category.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ),
