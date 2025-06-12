@@ -28,9 +28,9 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
 
   Future<void> _verifyOtpAndRegister() async {
     setState(() => _isLoading = true);
-    
+
     final enteredOtp = otpController.text.trim();
-    
+
     if (enteredOtp != widget.generatedOtp) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,8 +44,9 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
 
     try {
       // Kiểm tra email đã tồn tại chưa
-      final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(widget.email);
-      
+      final methods =
+          await FirebaseAuth.instance.fetchSignInMethodsForEmail(widget.email);
+
       if (methods.isNotEmpty) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +59,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
       }
 
       // Tạo tài khoản mới
-      final UserCredential userCredential = 
+      final UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: widget.email,
         password: widget.password,
@@ -69,20 +70,19 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
           .collection('users')
           .doc(userCredential.user?.email)
           .set({
-            'uid': userCredential.user?.uid,
-            'email': widget.email,
-            'nickname': widget.nickname,
-            'createdAt': FieldValue.serverTimestamp(),
-            'authProvider': 'email',
-          });
+        'uid': userCredential.user?.uid,
+        'email': widget.email,
+        'nickname': widget.nickname,
+        'createdAt': FieldValue.serverTimestamp(),
+        'authProvider': 'email',
+      });
 
       // Đăng nhập thành công
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration successful!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Registration successful!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
       ));
 
       // Điều hướng về trang chính
@@ -130,7 +130,8 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 30),
-            const Icon(Icons.email_outlined, size: 60, color: Colors.greenAccent),
+            const Icon(Icons.email_outlined,
+                size: 60, color: Colors.greenAccent),
             const SizedBox(height: 10),
             const Text("Enter the verification code sent to:",
                 style: TextStyle(color: Colors.white70, fontSize: 14)),
@@ -150,7 +151,8 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
                 labelStyle: const TextStyle(color: Colors.white70),
                 filled: true,
                 fillColor: Colors.white10,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.greenAccent),
