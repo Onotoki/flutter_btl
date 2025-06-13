@@ -5,7 +5,6 @@ import 'package:btl/pages/Intropage/otp_reiceiver_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:emailjs/emailjs.dart';
 import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatefulWidget {
