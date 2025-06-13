@@ -14,12 +14,13 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
 
   void resetPassword() async {
     try {
+      //Gọi Firebase Auth API sendPasswordResetEmail() với email đã nhập
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: emailController.text.trim(),
       );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password reset email sent.'),
+          content: Text('Nhập email để nhận liên kết đặt lại mật khẩu'),
           backgroundColor: Colors.green,
         ),
       );
@@ -46,7 +47,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Reset Password",
+                    "Đặt lại mật khẩu",
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -58,7 +59,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     controller: emailController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Enter your email',
+                      hintText: 'Nhập email của bạn',
                       hintStyle: const TextStyle(color: Colors.white70),
                       prefixIcon: const Icon(Icons.email, color: Colors.white),
                       filled: true,
@@ -81,7 +82,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text("Send Reset Link"),
+                      child: const Text("Gửi liên kết đặt lại mật khẩu"),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -95,7 +96,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     },
                     child: Text.rich(
                       TextSpan(
-                        text: "Back to Login",
+                        text: "Quay lại đăng nhập",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white,

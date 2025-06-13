@@ -15,6 +15,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
+  // Quản lý các TextEditingController
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   @override
@@ -88,11 +89,11 @@ class LoginPageState extends State<LoginPage> {
             const SizedBox(height: 30),
 
             // Nút Login
-            // Nút Login
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
+                  //Xử lý đăng nhập
                   try {
                     final userCredential =
                         await FirebaseAuth.instance.signInWithEmailAndPassword(

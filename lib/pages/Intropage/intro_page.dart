@@ -11,20 +11,20 @@ class IntroPage extends StatelessWidget {
   const IntroPage({super.key});
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
+      // Khởi tạo Google Sign-In và đăng xuất phiên trước đó
       final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
       await googleSignIn.signOut();
+      // Yêu cầu người dùng chọn tài khoản Google
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
       if (googleUser == null) return;
-
+      // Lấy thông tin xác thực
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
+      // Đăng nhập với Firebase
       final UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
 
@@ -177,7 +177,7 @@ class IntroPage extends StatelessWidget {
         }
       }
 
-      // Đăng nhập thành công
+      // Hiển thị thông báo đăng nhập thành công
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Đăng nhập thành công!'),
@@ -186,6 +186,7 @@ class IntroPage extends StatelessWidget {
         ),
       );
 
+      // Chuyển hướng đến trang HomePage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
