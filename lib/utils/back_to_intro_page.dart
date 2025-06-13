@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../pages/Intropage/intro_page.dart';
+import '../models/pages/Intropage/intro_page.dart';
 
 class BackToIntroPage extends StatelessWidget {
   const BackToIntroPage({super.key});

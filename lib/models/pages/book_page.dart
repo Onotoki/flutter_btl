@@ -5,10 +5,10 @@ import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/utils/back_to_intro_page.dart';
 import 'package:btl/utils/phan_duoi_back_to_intro_page.dart';
-import 'package:btl/pages/story_detail_page.dart';
-import 'package:btl/pages/categories_page.dart';
-import 'package:btl/pages/search_page.dart';
-import 'package:btl/pages/section_stories_page.dart';
+import 'package:btl/models/pages/story_detail_page.dart';
+import 'package:btl/models/pages/categories_page.dart';
+import 'package:btl/models/pages/search_page.dart';
+import 'package:btl/models/pages/section_stories_page.dart';
 
 class BookPage extends StatefulWidget {
   const BookPage({super.key});
@@ -137,11 +137,12 @@ class _BookPageState extends State<BookPage>
                         color: Colors.grey.withOpacity(0.2),
                         spreadRadius: 1,
                         blurRadius: 2,
-                        offset: const Offset(0, 1),
+                        offset: const Offset(0, -2),
                       ),
                     ],
                   ),
                   child: TabBar(
+                    dividerColor: Theme.of(context).colorScheme.primary,
                     controller: _tabController,
                     indicatorColor:
                         Colors.green, // Thanh bên dưới màu xanh lá cây

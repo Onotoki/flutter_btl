@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/search_page.dart';
-import 'package:btl/components/info_book_widgets.dart/reading_books.dart';
+import 'package:btl/models/pages/Intropage/intro_page.dart';
 import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';
 
@@ -17,6 +15,7 @@ class Person extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -35,11 +34,8 @@ class Person extends StatelessWidget {
 
   Widget _buildUserHeader(BuildContext context) {
     final User? user = _auth.currentUser;
-    final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
-    final bgColor = isDarkTheme ? Colors.grey[900] : Colors.white;
 
     return Container(
-      color: bgColor,
       padding: const EdgeInsets.all(16),
       child:
           user != null ? _buildLoggedInUser(user, context) : _buildGuestUser(),
@@ -48,11 +44,11 @@ class Person extends StatelessWidget {
 
   Widget _buildLoggedInUser(User user, BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore.collection('users').doc(user.uid).snapshots(),
+      stream: _firestore.collection('users').doc(user.email).snapshots(),
       builder: (context, snapshot) {
         // Xử lý loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildUserPlaceholder();
+          // return _buildUserPlaceholder();
         }
 
         // Xử lý lỗi
@@ -69,7 +65,7 @@ class Person extends StatelessWidget {
         // Lấy dữ liệu từ Firestore
         final userData = snapshot.data?.data() as Map<String, dynamic>?;
         return _buildUserInfo(
-          displayName: userData?['nickname'] ?? user.displayName ?? 'UserName',
+          displayName: userData?['nickname'] ?? 'UserName',
           email: user.email ?? 'No email',
           photoUrl: userData?['profileImage'] ?? user.photoURL,
           context: context,
@@ -84,9 +80,6 @@ class Person extends StatelessWidget {
     required String? photoUrl,
     required BuildContext context,
   }) {
-    final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
-    final textColor = isDarkTheme ? Colors.white : Colors.black;
-
     return GestureDetector(
       onTap: () => _showEditDialog(context, displayName, email),
       child: Row(
@@ -105,7 +98,6 @@ class Person extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: textColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -115,7 +107,6 @@ class Person extends StatelessWidget {
                   email,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -149,14 +140,14 @@ class Person extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
+                // color: Colors.grey[600],
               ),
             ),
             Text(
               'Đăng nhập để mở khóa tính năng',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                // color: Colors.grey[500],
               ),
             ),
           ],
@@ -166,24 +157,10 @@ class Person extends StatelessWidget {
   }
 
   Widget _buildFunctionList(BuildContext context) {
-    final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
-    final bgColor = isDarkTheme ? Colors.grey[900] : Colors.white;
-    final borderColor = isDarkTheme ? Colors.grey[800]! : Colors.grey[300]!;
-
     return Container(
-      color: bgColor,
       child: SingleChildScrollView(
         child: Column(
           children: [
-            _buildListTile(
-              context,
-              icon: Icons.menu_book,
-              title: 'Đang đọc',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ReadingBooks()),
-              ),
-            ),
             _buildListTile(
               context,
               icon: Icons.history,
@@ -222,21 +199,21 @@ class Person extends StatelessWidget {
     required String title,
     VoidCallback? onTap,
   }) {
-    final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
-    final bgColor = isDarkTheme ? Colors.grey[900] : Colors.white;
-    final textColor = isDarkTheme ? Colors.white : Colors.black;
-    final borderColor = isDarkTheme ? Colors.grey[800]! : Colors.grey[300]!;
-
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: borderColor, width: 1),
+          top: BorderSide(
+              width: 2, color: Theme.of(context).colorScheme.primary),
         ),
-        color: bgColor,
+        // color: bgColor,
       ),
       child: ListTile(
-        leading: Icon(icon, color: textColor),
-        title: Text(title, style: TextStyle(color: textColor)),
+        leading: Icon(
+          icon,
+        ),
+        title: Text(
+          title,
+        ),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
@@ -245,21 +222,34 @@ class Person extends StatelessWidget {
 
   Widget _buildThemeSwitchTile(BuildContext context) {
     final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
-    final bgColor = isDarkTheme ? Colors.grey[900] : Colors.white;
-    final textColor = isDarkTheme ? Colors.white : Colors.black;
-    final borderColor = isDarkTheme ? Colors.grey[800]! : Colors.grey[300]!;
 
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: borderColor, width: 1),
+          top: BorderSide(
+              width: 2, color: Theme.of(context).colorScheme.primary),
         ),
-        color: bgColor,
       ),
       child: ListTile(
-        leading: Icon(Icons.color_lens, color: textColor),
-        title: Text('Chế độ tối', style: TextStyle(color: textColor)),
+        leading: Icon(
+          Icons.color_lens,
+        ),
+        title: Text(
+          'Chế độ sáng/tối',
+        ),
         trailing: Switch(
+          inactiveThumbColor: Colors.grey,
+          // trackOutlineColor: null,
+          // trackOutlineWidth: ,
+          trackOutlineColor: WidgetStateProperty.resolveWith<Color?>(
+              (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.transparent;
+            }
+
+            return Colors.grey; // Use the default color.
+          }),
+
           value: isDarkTheme,
           onChanged: (value) {
             // Gọi ThemeCubit để thay đổi theme
@@ -282,8 +272,10 @@ class Person extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!, width: 1),
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+          top: BorderSide(
+              color: Theme.of(context).colorScheme.primary, width: 2),
+          bottom: BorderSide(
+              color: Theme.of(context).colorScheme.primary, width: 2),
         ),
       ),
       child: ListTile(
@@ -303,7 +295,10 @@ class Person extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -358,7 +353,10 @@ class Person extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: Text(
+              'Hủy',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () => _updateUserInfo(
@@ -386,7 +384,7 @@ class Person extends StatelessWidget {
       if (user == null) return;
 
       // Cập nhật trong Firestore
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('users').doc(user.email).update({
         'nickname': newName,
         if (newEmail != user.email) 'email': newEmail,
       });
@@ -416,6 +414,7 @@ class Person extends StatelessWidget {
   }
 
   Widget _buildUserPlaceholder() {
+    print('Chạy hàm load lại ');
     return Row(
       children: [
         Container(

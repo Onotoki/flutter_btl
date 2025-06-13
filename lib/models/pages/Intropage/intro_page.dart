@@ -1,5 +1,5 @@
-import 'package:btl/pages/Intropage/register_page.dart';
-import 'package:btl/pages/home_page.dart';
+import 'package:btl/models/pages/Intropage/register_page.dart';
+import 'package:btl/models/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

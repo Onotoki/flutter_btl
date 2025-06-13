@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/Intropage/otp_reiceiver_page.dart';
+import 'package:btl/models/pages/Intropage/intro_page.dart';
+import 'package:btl/models/pages/Intropage/otp_reiceiver_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';

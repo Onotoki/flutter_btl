@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
-import 'package:btl/pages/story_detail_page.dart';
+import 'package:btl/models/pages/story_detail_page.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 

@@ -1,7 +1,7 @@
-import 'package:btl/pages/Intropage/forget_password_page.dart';
-import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/admin/admin_story_page.dart';
-import 'package:btl/pages/home_page.dart';
+import 'package:btl/models/pages/Intropage/forget_password_page.dart';
+import 'package:btl/models/pages/Intropage/intro_page.dart';
+import 'package:btl/models/pages/admin/admin_story_page.dart';
+import 'package:btl/models/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

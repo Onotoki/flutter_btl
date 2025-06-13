@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../pages/search_page.dart';
+import '../models/pages/search_page.dart';
 
 class PhanDuoiBackToIntroPage extends StatelessWidget {
   const PhanDuoiBackToIntroPage({super.key});

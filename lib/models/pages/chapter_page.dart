@@ -1,11 +1,13 @@
 import 'package:btl/api/otruyen_api.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'dart:async'; // Thêm import cho Timer
-import '../services/chapter_cache_service.dart';
-import '../models/chapter.dart';
-import '../components/info_book_widgets.dart/comment_chapter.dart'; // Thêm import cho CommentChapter
+import '../../services/chapter_cache_service.dart';
+import '../chapter.dart';
+import '../../components/info_book_widgets.dart/comment_chapter.dart'; // Thêm import cho CommentChapter
 
 class ChapterPage extends StatefulWidget {
   final String storySlug;
@@ -157,18 +159,19 @@ class _ChapterPageState extends State<ChapterPage> {
     print('Khôi phục vị trí scroll: $percentage%');
 
     // Giảm thời gian chờ xuống để tăng tốc độ khôi phục vị trí
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(seconds: 2));
 
     if (_scrollController.hasClients) {
       final maxExtent = _scrollController.position.maxScrollExtent;
       final targetOffset = (percentage / 100.0) * maxExtent;
 
       // Sử dụng animateTo để tạo hiệu ứng mượt mà khi cuộn
-      _scrollController.animateTo(
-        targetOffset,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutQuad, // Sử dụng curve mượt hơn
-      );
+      // _scrollController.animateTo(
+      //   targetOffset,
+      //   duration: const Duration(milliseconds: 500),
+      //   curve: Curves.easeOutQuad, // Sử dụng curve mượt hơn
+      // );
+      _scrollController.jumpTo(targetOffset);
 
       // Hiển thị thông báo đã khôi phục vị trí đọc
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1161,63 +1164,69 @@ class _ChapterPageState extends State<ChapterPage> {
 
   Widget _buildImageWidget(String imageUrl, int index) {
     // Sử dụng cached image provider nếu có
-    final ImageProvider imageProvider =
-        _imageCache[imageUrl] ?? NetworkImage(imageUrl);
+    // final ImageProvider imageProvider =
+    //     _imageCache[imageUrl] ?? NetworkImage(imageUrl);
 
-    return Image(
-      image: imageProvider,
+    // return Image(
+    //   image: imageProvider,
+    //   fit: BoxFit.fitWidth,
+    //   width: double.infinity,
+    //   loadingBuilder: (context, child, loadingProgress) {
+    //     if (loadingProgress == null) return child;
+    //     return Container(
+    //       width: double.infinity,
+    //       height: 200,
+    //       color: Colors.grey[200],
+    //       child: Center(
+    //         child: CircularProgressIndicator(
+    //           value: loadingProgress.expectedTotalBytes != null
+    //               ? loadingProgress.cumulativeBytesLoaded /
+    //                   loadingProgress.expectedTotalBytes!
+    //               : null,
+    //         ),
+    //       ),
+    //     );
+    //   },
+    //   errorBuilder: (context, error, stackTrace) {
+    //     // Auto retry khi ảnh lỗi
+    //     Future.delayed(const Duration(seconds: 1), () {
+    //       if (mounted) {
+    //         _preloadImage(index);
+    //       }
+    //     });
+
+    //     return Container(
+    //       width: double.infinity,
+    //       height: 200,
+    //       color: Colors.grey[300],
+    //       child: Center(
+    //         child: Column(
+    //           mainAxisSize: MainAxisSize.min,
+    //           children: [
+    //             const Icon(Icons.image_not_supported),
+    //             const SizedBox(height: 8),
+    //             const Text('Không thể tải ảnh', style: TextStyle(fontSize: 14)),
+    //             const SizedBox(height: 4),
+    //             Text(
+    //               imageUrl.length > 50
+    //                   ? '${imageUrl.substring(0, 50)}...'
+    //                   : imageUrl,
+    //               style: const TextStyle(fontSize: 12),
+    //             ),
+    //             const SizedBox(height: 8),
+    //             const Text('Đang thử lại...',
+    //                 style: TextStyle(fontSize: 10, color: Colors.orange)),
+    //           ],
+    //         ),
+    //       ),
+    //     );
+    //   },
+    // );
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.fitWidth,
       width: double.infinity,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          width: double.infinity,
-          height: 200,
-          color: Colors.grey[200],
-          child: Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        // Auto retry khi ảnh lỗi
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            _preloadImage(index);
-          }
-        });
-
-        return Container(
-          width: double.infinity,
-          height: 200,
-          color: Colors.grey[300],
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.image_not_supported),
-                const SizedBox(height: 8),
-                const Text('Không thể tải ảnh', style: TextStyle(fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(
-                  imageUrl.length > 50
-                      ? '${imageUrl.substring(0, 50)}...'
-                      : imageUrl,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                const SizedBox(height: 8),
-                const Text('Đang thử lại...',
-                    style: TextStyle(fontSize: 10, color: Colors.orange)),
-              ],
-            ),
-          ),
-        );
-      },
+      errorWidget: (context, url, error) => Icon(Icons.error),
     );
   }
 }

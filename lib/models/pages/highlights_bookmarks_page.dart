@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/highlight.dart';
-import '../models/bookmark.dart';
-import '../services/reading_service.dart';
+import '../highlight.dart';
+import '../bookmark.dart';
+import '../../services/reading_service.dart';
 
 class HighlightsBookmarksPage extends StatefulWidget {
   final String storySlug;

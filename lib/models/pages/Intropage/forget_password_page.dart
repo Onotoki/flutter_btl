@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:btl/pages/Intropage/login_page.dart';
+import 'package:btl/models/pages/Intropage/login_page.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
   const ForgetPasswordPage({super.key});
@@ -100,7 +100,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           fontSize: 14,
                           color: Colors.white,
                           decoration: TextDecoration.underline,
-                          decorationColor: Colors.white, 
+                          decorationColor: Colors.white,
                         ),
                       ),
                     ),

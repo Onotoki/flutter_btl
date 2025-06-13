@@ -73,16 +73,16 @@
  */
 
 import 'package:flutter/material.dart';
-import '../api/otruyen_api.dart';
-import '../models/story.dart';
-import '../models/highlight.dart';
-import '../models/bookmark.dart';
-import '../services/reading_service.dart';
-import '../services/reading_settings_service.dart';
-import '../services/chapter_cache_service.dart';
-import '../services/tts_service.dart';
-import '../components/selectable_text_widget.dart';
-import '../components/info_book_widgets.dart/comment_chapter.dart'; // Thêm import CommentChapter
+import '../../api/otruyen_api.dart';
+import '../story.dart';
+import '../highlight.dart';
+import '../bookmark.dart';
+import '../../services/reading_service.dart';
+import '../../services/reading_settings_service.dart';
+import '../../services/chapter_cache_service.dart';
+import '../../services/tts_service.dart';
+import '../../components/selectable_text_widget.dart';
+import '../../components/info_book_widgets.dart/comment_chapter.dart'; // Thêm import CommentChapter
 import 'highlights_bookmarks_page.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Thêm import cho Firestore

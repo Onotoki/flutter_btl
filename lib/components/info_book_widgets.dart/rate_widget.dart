@@ -118,9 +118,12 @@ class _RateAllWidgetState extends State<RateAllWidget> {
         }
         if (snapshot.hasData && snapshot.data!.exists) {
           final data = snapshot.data?.data() as Map<String, dynamic>?;
-          final currentRate = data!['rate'];
+          final currentRate = data!['rate'].toStringAsFixed(1);
           final countRate = data['count'];
-          return Rate(currentRate: currentRate, countRate: countRate);
+          return Rate(
+              currentRate:
+                  currentRate == '10.0' ? 10 : double.parse(currentRate),
+              countRate: countRate);
         }
         // Lấy điểm và số lượng đánh giá
         return Rate();
@@ -128,7 +131,7 @@ class _RateAllWidgetState extends State<RateAllWidget> {
     );
   }
 
-  Widget Rate({double currentRate = 0, int countRate = 0}) {
+  Widget Rate({var currentRate = 0, int countRate = 0}) {
     return Row(
       children: [
         Expanded(

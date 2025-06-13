@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:btl/cubit/categories_cubit.dart';
 import 'package:btl/cubit/cacheable_cubit.dart';
 import 'package:btl/models/category.dart';
-import 'package:btl/pages/category_stories_page.dart';
+import 'package:btl/models/pages/category_stories_page.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -122,6 +122,7 @@ class _CategoriesPageState extends State<CategoriesPage>
 
   Widget _buildCategoryCard(Category category) {
     return Card(
+      color: Theme.of(context).colorScheme.primary,
       elevation: 2,
       child: InkWell(
         onTap: () {
@@ -134,25 +135,15 @@ class _CategoriesPageState extends State<CategoriesPage>
         },
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                category.name,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+          child: Center(
+            child: Text(
+              category.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 5),
-              Text(
-                '${category.stories} truyện',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

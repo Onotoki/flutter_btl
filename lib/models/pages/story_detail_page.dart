@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/models/chapter.dart';
-import 'package:btl/pages/chapter_page.dart';
-import 'package:btl/pages/epub_chapter_page.dart';
+import 'package:btl/models/pages/chapter_page.dart';
+import 'package:btl/models/pages/epub_chapter_page.dart';
 
 class StoryDetailPage extends StatefulWidget {
   final Story story;
@@ -672,7 +672,10 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     },
                                   );
                                 },
-                                child: Text('Chi tiết'),
+                                child: Text(
+                                  'Chi tiết',
+                                  style: TextStyle(color: Colors.green),
+                                ),
                               ),
                             )
                           ],
