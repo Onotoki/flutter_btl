@@ -21,27 +21,42 @@ class LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF003E32),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close, size: 30, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => IntroPage()),
-              ); // quay lại hoặc thoát
-            },
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.transparent,
+      //   automaticallyImplyLeading: false,
+      //   elevation: 0,
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.close, size: 30, color: Colors.white),
+      //       onPressed: () {
+      //         Navigator.push(
+      //           context,
+      //           MaterialPageRoute(builder: (context) => IntroPage()),
+      //         ); // quay lại hoặc thoát
+      //       },
+      //     ),
+      //   ],
+      // ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, size: 30, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const IntroPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
             const Spacer(),
 
             const Text(

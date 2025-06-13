@@ -34,13 +34,15 @@ class RateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ColorFiltered(
-              colorFilter: ColorFilter.mode(color, BlendMode.saturation),
-              child: Image.asset(
-                imageIcon,
-                width: 50,
-                height: 50,
-                fit: BoxFit.contain,
+            ClipRRect(
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(color, BlendMode.saturation),
+                child: Image.asset(
+                  imageIcon,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             const SizedBox(height: 8),
