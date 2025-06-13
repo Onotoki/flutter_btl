@@ -41,7 +41,8 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final data = await OTruyenApi.getCategories();
       setState(() {
-        _allGenres = Category.parseCategories(data);
+        _allGenres =
+            ContentFilter.filterCategories(Category.parseCategories(data));
       });
       print('Tải ${_allGenres.length} thể loại từ API');
     } catch (e) {
@@ -121,21 +122,28 @@ class _SearchPageState extends State<SearchPage> {
       }
     }
 
-    // Loại bỏ trùng
+    // Loại bỏ trùng bằng slug
     final Map<String, Story> uniqueMap = {};
     for (var story in combined) {
       uniqueMap[story.slug] = story;
     }
 
-    final filtered = ContentFilter.filterStories(uniqueMap.values.toList());
+    // Lọc người lớn
+    final safeStories = ContentFilter.filterStories(uniqueMap.values.toList());
 
-    print('Tổng số truyện sau lọc là: ${filtered.length}');
+    // Lọc chỉ lấy truyện có đầy đủ tất cả slug đã chọn
+    final filteredByAllGenres = safeStories.where((story) {
+      final storySlugs = story.categories.map((c) => c.toLowerCase()).toSet();
+      return _selectedSlugs.every((slug) => storySlugs.contains(slug));
+    }).toList();
+
+    print('Tổng số truyện sau lọc là: ${filteredByAllGenres.length}');
 
     setState(() {
-      _searchResults = filtered;
+      _searchResults = filteredByAllGenres;
       _isLoading = false;
       _debugInfo =
-          'Đã lọc ${_selectedSlugs.length} thể loại. Kết quả: ${filtered.length} truyện.';
+          'Đã lọc ${_selectedSlugs.length} thể loại. Kết quả: ${filteredByAllGenres.length} truyện.';
     });
   }
 
@@ -160,7 +168,7 @@ class _SearchPageState extends State<SearchPage> {
                         children: _allGenres.map((genre) {
                           final selected = _selectedSlugs.contains(genre.slug);
                           return CheckboxListTile(
-                            title: Text('${genre.name} (${genre.stories})'),
+                            title: Text(genre.name),
                             value: selected,
                             onChanged: (val) {
                               setModalState(() {
@@ -180,8 +188,17 @@ class _SearchPageState extends State<SearchPage> {
                         Navigator.pop(context);
                         _filterByGenres();
                       },
-                      icon: const Icon(Icons.filter_alt),
-                      label: const Text('Lọc truyện'),
+                      icon: const Icon(
+                        Icons.filter_alt,
+                        color: Colors.grey,
+                      ),
+                      label: const Text(
+                        'Lọc truyện',
+                        style: TextStyle(
+                          color: Colors.grey, // Hoặc màu khác bạn muốn
+                          fontWeight: FontWeight.bold, // tuỳ chọn
+                        ),
+                      ),
                     ),
                   ],
                 ),

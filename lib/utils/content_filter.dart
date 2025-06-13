@@ -1,4 +1,5 @@
 import 'package:btl/models/story.dart';
+import 'package:btl/models/category.dart';
 
 class ContentFilter {
   // Danh sách các từ khóa liên quan đến nội dung người lớn cần lọc
@@ -135,5 +136,11 @@ class ContentFilter {
     classifyStoryTypes(stories);
     // Sau đó lọc nội dung người lớn
     return stories.where((story) => !isAdultStory(story)).toList();
+  }
+
+  static List<Category> filterCategories(List<Category> categories) {
+    return categories
+        .where((category) => !isAdultCategory(category.name))
+        .toList();
   }
 }

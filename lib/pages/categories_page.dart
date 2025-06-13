@@ -30,7 +30,11 @@ class _CategoriesPageState extends State<CategoriesPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thể loại truyện'),
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Thể loại truyện',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
