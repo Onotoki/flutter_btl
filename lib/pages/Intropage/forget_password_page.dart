@@ -19,7 +19,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password reset email sent.'),
+          content: Text('Nhập email để nhận liên kết đặt lại mật khẩu'),
           backgroundColor: Colors.green,
         ),
       );
@@ -46,7 +46,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Reset Password",
+                    "Đặt lại mật khẩu",
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -81,7 +81,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text("Send Reset Link"),
+                      child: const Text("Gửi liên kết đặt lại mật khẩu"),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -95,7 +95,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     },
                     child: Text.rich(
                       TextSpan(
-                        text: "Back to Login",
+                        text: "Quay lại đăng nhập",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white,
