@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
+import 'package:btl/models/category.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/pages/story_detail_page.dart';
 import 'package:btl/utils/content_filter.dart';
@@ -20,10 +21,32 @@ class _SearchPageState extends State<SearchPage> {
   bool _hasSearched = false;
   String _debugInfo = '';
 
+  List<Category> _allGenres = [];
+  List<String> _selectedSlugs = [];
+  bool _isFiltering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGenres();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadGenres() async {
+    try {
+      final data = await OTruyenApi.getCategories();
+      setState(() {
+        _allGenres = Category.parseCategories(data);
+      });
+      print('Tải ${_allGenres.length} thể loại từ API');
+    } catch (e) {
+      print('Lỗi khi tải thể loại: $e');
+    }
   }
 
   Future<void> _performSearch(String keyword) async {
@@ -33,90 +56,141 @@ class _SearchPageState extends State<SearchPage> {
       _isLoading = true;
       _errorMessage = '';
       _hasSearched = true;
+      _isFiltering = false;
       _debugInfo = '';
     });
 
     try {
       final result = await OTruyenApi.searchComics(keyword);
-      String log = 'Kết quả tìm kiếm: ${result.keys.toList()}\n';
-      List<Story> unfilteredResults = [];
+      List<Story> stories = [];
 
-      // Kiểm tra cấu trúc chuẩn của API tìm kiếm (items nằm trong response)
       if (result.containsKey('items') && result['items'] is List) {
-        log += 'Tìm thấy items trong response\n';
-        unfilteredResults = _parseStories(result['items']);
-      }
-      // Hoặc có thể dữ liệu được đóng gói trong cấu trúc phức tạp hơn
-      else {
-        log += 'Không tìm thấy items trực tiếp, tìm kiếm thêm...\n';
-        // Debug các key có trong result
-        result.keys.forEach((key) {
-          log += '- Key: $key, Type: ${result[key].runtimeType}\n';
-        });
-
-        // Nếu có trường item (số ít)
-        if (result.containsKey('item') &&
-            result['item'] is Map<String, dynamic>) {
-          log += 'Tìm thấy item object\n';
-          unfilteredResults = [Story.fromJson(result['item'])];
-        }
-        // Nếu có trường sectionComic (như trong home.json)
-        else if (result.containsKey('sectionComic') &&
-            result['sectionComic'] is List) {
-          log += 'Tìm thấy sectionComic\n';
-          List<Story> stories = [];
-          for (var section in result['sectionComic']) {
-            if (section is Map &&
-                section.containsKey('comics') &&
-                section['comics'] is List) {
-              stories.addAll(_parseStories(section['comics']));
-            }
-          }
-          unfilteredResults = stories;
-        }
+        stories = _parseStories(result['items']);
+        print('Tìm thấy ${stories.length} truyện từ API search');
       }
 
-      log += 'Số truyện tìm thấy trước khi lọc: ${unfilteredResults.length}\n';
-
-      // Lọc bỏ truyện người lớn
-      int beforeFilter = unfilteredResults.length;
-      List<Story> filteredResults =
-          ContentFilter.filterStories(unfilteredResults);
-      log +=
-          'Đã lọc bỏ ${beforeFilter - filteredResults.length} truyện người lớn\n';
-      log += 'Số truyện còn lại sau khi lọc: ${filteredResults.length}\n';
+      stories = ContentFilter.filterStories(stories);
+      print('Sau lọc người lớn còn lại ${stories.length} truyện');
 
       setState(() {
-        _searchResults = filteredResults;
+        _searchResults = stories;
         _isLoading = false;
-        _debugInfo = log;
-        print(log);
+        _debugInfo = 'Tìm được ${stories.length} truyện từ "$keyword"';
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Không thể tìm kiếm truyện: $e';
+        _errorMessage = 'Lỗi tìm kiếm: $e';
         _isLoading = false;
       });
     }
   }
 
-  // Helper method để chuyển đổi dữ liệu JSON thành danh sách Story
-  List<Story> _parseStories(dynamic data) {
-    List<Story> stories = [];
+  List<Story> _parseStories(List<dynamic> data) {
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map((e) => Story.fromJson(e))
+        .toList();
+  }
 
-    try {
-      if (data is List) {
-        for (var item in data) {
-          if (item is Map<String, dynamic>) {
-            stories.add(Story.fromJson(item));
-          }
+  Future<void> _filterByGenres() async {
+    if (_selectedSlugs.isEmpty) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+      _hasSearched = true;
+      _isFiltering = true;
+      _searchResults = [];
+      _debugInfo = 'Đang lọc truyện...';
+    });
+
+    final List<Story> combined = [];
+
+    for (String slug in _selectedSlugs) {
+      try {
+        final result = await OTruyenApi.getComicsByCategory(slug);
+        if (result.containsKey('items') && result['items'] is List) {
+          final stories = _parseStories(result['items']);
+          print('Slug [$slug] trả về ${stories.length} truyện');
+          combined.addAll(stories);
+        } else {
+          print('Slug [$slug] không có items trong API');
         }
+      } catch (e) {
+        print('Lỗi khi gọi truyện theo thể loại [$slug]: $e');
       }
-    } catch (e) {
-      print('Lỗi khi phân tích dữ liệu truyện: $e');
     }
 
-    return stories;
+    // Loại bỏ trùng
+    final Map<String, Story> uniqueMap = {};
+    for (var story in combined) {
+      uniqueMap[story.slug] = story;
+    }
+
+    final filtered = ContentFilter.filterStories(uniqueMap.values.toList());
+
+    print('Tổng số truyện sau lọc là: ${filtered.length}');
+
+    setState(() {
+      _searchResults = filtered;
+      _isLoading = false;
+      _debugInfo =
+          'Đã lọc ${_selectedSlugs.length} thể loại. Kết quả: ${filtered.length} truyện.';
+    });
+  }
+
+  void _showGenreFilter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Column(
+                  children: [
+                    const Text('Chọn thể loại',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: ListView(
+                        children: _allGenres.map((genre) {
+                          final selected = _selectedSlugs.contains(genre.slug);
+                          return CheckboxListTile(
+                            title: Text('${genre.name} (${genre.stories})'),
+                            value: selected,
+                            onChanged: (val) {
+                              setModalState(() {
+                                if (val == true) {
+                                  _selectedSlugs.add(genre.slug);
+                                } else {
+                                  _selectedSlugs.remove(genre.slug);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _filterByGenres();
+                      },
+                      icon: const Icon(Icons.filter_alt),
+                      label: const Text('Lọc truyện'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -131,30 +205,31 @@ class _SearchPageState extends State<SearchPage> {
           ),
           child: TextField(
             controller: _searchController,
+            style: const TextStyle(color: Colors.black),
             decoration: const InputDecoration(
               hintText: "Tìm kiếm truyện...",
               hintStyle: TextStyle(color: Colors.grey),
               border: InputBorder.none,
               prefixIcon: Icon(Icons.search, color: Colors.grey),
               contentPadding:
-                  EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                  EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             ),
-            onSubmitted: (value) {
-              _performSearch(value);
-            },
+            onSubmitted: _performSearch,
           ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.clear),
-            onPressed: () {
-              _searchController.clear();
-            },
+            onPressed: () => _searchController.clear(),
           ),
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.filter_alt_outlined),
             onPressed: () {
-              _performSearch(_searchController.text);
+              if (_allGenres.isEmpty) {
+                _loadGenres().then((_) => _showGenreFilter());
+              } else {
+                _showGenreFilter();
+              }
             },
           ),
         ],
@@ -165,55 +240,34 @@ class _SearchPageState extends State<SearchPage> {
               ? Center(child: Text(_errorMessage))
               : !_hasSearched
                   ? const Center(
-                      child: Text('Nhập từ khóa để tìm kiếm truyện'),
-                    )
+                      child:
+                          Text('Nhập từ khóa hoặc chọn thể loại để tìm truyện'))
                   : Column(
                       children: [
-                        // Debug info - chỉ hiển thị trong chế độ debug
                         if (_debugInfo.isNotEmpty)
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Debug Info'),
-                                  content: SingleChildScrollView(
-                                    child: Text(_debugInfo),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Đóng'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(8),
-                              // color: Colors.amber.withOpacity(0.3),
-                              // child: const Text('Tap for Debug Info'),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              _debugInfo,
+                              style: const TextStyle(color: Colors.grey),
                             ),
                           ),
-
-                        // Kết quả tìm kiếm
                         Expanded(
                           child: _searchResults.isEmpty
                               ? const Center(
-                                  child: Text('Không tìm thấy truyện nào'),
+                                  child: Text('Không tìm thấy truyện phù hợp'),
                                 )
                               : Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: GridView.builder(
+                                    itemCount: _searchResults.length,
                                     gridDelegate:
                                         const SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 3,
                                       childAspectRatio: 0.5,
-                                      crossAxisSpacing: 8,
                                       mainAxisSpacing: 8,
+                                      crossAxisSpacing: 8,
                                     ),
-                                    itemCount: _searchResults.length,
                                     itemBuilder: (context, index) {
                                       final story = _searchResults[index];
                                       return StoryTile(
@@ -222,10 +276,8 @@ class _SearchPageState extends State<SearchPage> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) =>
-                                                  StoryDetailPage(
-                                                story: story,
-                                              ),
+                                              builder: (_) =>
+                                                  StoryDetailPage(story: story),
                                             ),
                                           );
                                         },
