@@ -45,7 +45,7 @@ class LoginPageState extends State<LoginPage> {
             const Spacer(),
 
             const Text(
-              "Login",
+              "Đăng nhập",
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
@@ -78,7 +78,7 @@ class LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white10,
-                labelText: "Password",
+                labelText: "Mật khẩu",
                 labelStyle: const TextStyle(color: Colors.white70),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -108,7 +108,7 @@ class LoginPageState extends State<LoginPage> {
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Login successful"),
+                        content: Text("Đăng nhập thành công"),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -130,7 +130,7 @@ class LoginPageState extends State<LoginPage> {
                   } on FirebaseAuthException catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text("Login failed: ${e.message}"),
+                        content: Text("Đăng nhập thất bại: ${e.message}"),
                         backgroundColor: Colors.redAccent,
                       ),
                     );
@@ -144,7 +144,7 @@ class LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 child: const Text(
-                  "Login",
+                  "Đăng nhập",
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black,
@@ -157,7 +157,7 @@ class LoginPageState extends State<LoginPage> {
             Center(
               child: RichText(
                 text: TextSpan(
-                  text: 'Forget password?',
+                  text: 'Quên mật khẩu?',
                   style: const TextStyle(
                     color: Colors.white,
                     decoration: TextDecoration.underline,

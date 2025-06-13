@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:btl/cubit/home_cubit.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
@@ -7,7 +9,7 @@ import 'package:btl/utils/phan_duoi_back_to_intro_page.dart';
 import 'package:btl/pages/story_detail_page.dart';
 import 'package:btl/pages/categories_page.dart';
 import 'package:btl/pages/search_page.dart';
-import 'package:btl/utils/content_filter.dart';
+import 'package:btl/pages/section_stories_page.dart';
 
 class BookPage extends StatefulWidget {
   const BookPage({super.key});
@@ -16,213 +18,238 @@ class BookPage extends StatefulWidget {
   State<BookPage> createState() => _BookPageState();
 }
 
-class _BookPageState extends State<BookPage> {
-  final Map<String, List<Story>> _categories = {
-    'Truyện mới cập nhật': [],
-    'Đang phát hành': [],
-    'Hoàn thành': [],
-    'Sắp ra mắt': []
-  };
+class _BookPageState extends State<BookPage>
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  late TabController _tabController;
 
-  // Biến kiểm tra xem dữ liệu đã loaad xong chưa
-  bool _isLoading = true;
-  String _errorMessage = '';
-  // Biến để in log ra cho việc debug
-  String _debugInfo = '';
+  @override
+  bool get wantKeepAlive => true; // Giữ state khi switch tab
 
   @override
   void initState() {
     super.initState();
-    _loadHomeData();
+    _tabController = TabController(length: 2, vsync: this);
+
+    // Load data when page is first initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeCubit>().loadHomeData();
+    });
   }
 
-  Future<void> _loadHomeData() async {
-    try {
-      String debugLogs = '';
-
-      // Sử dụng các hàm API cụ thể cho từng danh mục
-      debugLogs += 'Đang lấy tất cả dữ liệu danh mục...\n';
-
-      // 1. Tải truyện mới cập nhật
-      debugLogs += 'Đang tải truyện từ mục mới cập nhật...\n';
-      final newUpdateResult = await OTruyenApi.getNewlyUpdatedComics();
-      List<Story> newlyUpdatedComics =
-          _parseStoriesData(newUpdateResult, debugLogs);
-      // Lọc bỏ truyện người lớn
-      int beforeFilter = newlyUpdatedComics.length;
-      newlyUpdatedComics = ContentFilter.filterStories(newlyUpdatedComics);
-      debugLogs +=
-          'Đã lọc ra ${beforeFilter - newlyUpdatedComics.length} truyện người lớn từ mục mới cập nhật\n';
-      _categories['Truyện mới cập nhật'] = newlyUpdatedComics;
-      debugLogs +=
-          'Đã tải ${newlyUpdatedComics.length} truyện từ mục mới cập nhật sau khi lọc\n';
-
-      // 2. Tải truyện đang phát hành
-      debugLogs += 'Đang lấy tất cả dữ liệu đang phát hành...\n';
-      final ongoingResult = await OTruyenApi.getOngoingComics();
-      List<Story> ongoingComics = _parseStoriesData(ongoingResult, debugLogs);
-      // Lọc bỏ truyện người lớn
-      beforeFilter = ongoingComics.length;
-      ongoingComics = ContentFilter.filterStories(ongoingComics);
-      debugLogs +=
-          'Đã lọc ra ${beforeFilter - ongoingComics.length} truyện người lớn từ mục đang phát hành\n';
-      _categories['Đang phát hành'] = ongoingComics;
-      debugLogs +=
-          'Đã tải ${ongoingComics.length} truyện từ mục đang phát hành sau khi lọc\n';
-
-      // 3. Tải truyện hoàn thành
-      debugLogs += 'Fetching completed comics...\n';
-      final completedResult = await OTruyenApi.getCompletedComics();
-      List<Story> completedComics =
-          _parseStoriesData(completedResult, debugLogs);
-      // Lọc bỏ truyện người lớn
-      beforeFilter = completedComics.length;
-      completedComics = ContentFilter.filterStories(completedComics);
-      debugLogs +=
-          'Filtered out ${beforeFilter - completedComics.length} adult stories from completed\n';
-      _categories['Hoàn thành'] = completedComics;
-      debugLogs +=
-          'Loaded ${completedComics.length} completed comics after filtering\n';
-
-      // 4. Tải truyện sắp ra mắt
-      debugLogs += 'Fetching upcoming comics...\n';
-      final upcomingResult = await OTruyenApi.getUpcomingComics();
-      List<Story> upcomingComics = _parseStoriesData(upcomingResult, debugLogs);
-      // Lọc bỏ truyện người lớn
-      beforeFilter = upcomingComics.length;
-      upcomingComics = ContentFilter.filterStories(upcomingComics);
-      debugLogs +=
-          'Filtered out ${beforeFilter - upcomingComics.length} adult stories from upcoming\n';
-      _categories['Sắp ra mắt'] = upcomingComics;
-      debugLogs +=
-          'Loaded ${upcomingComics.length} upcoming comics after filtering\n';
-
-      // Xử lý nếu bất kỳ danh mục nào trống
-      for (var category in _categories.keys) {
-        if (_categories[category]!.isEmpty) {
-          debugLogs += 'Không có dữ liệu  cho mục $category\n';
-          _categories[category] = _createSampleDataForCategory();
-        }
-      }
-
-      setState(() {
-        _isLoading = false;
-        _debugInfo = debugLogs;
-        print(debugLogs);
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Không thể tải dữ liệu trang chủ: $e';
-        _isLoading = false;
-        print('Lỗi khi tải dữ liệu trang chủ: $e');
-      });
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
-  // Phân tích dữ liệu API và chuyển thành danh sách Story
-  List<Story> _parseStoriesData(Map<String, dynamic> result, String debugLogs) {
-    List<Story> stories = [];
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    try {
-      // Kiểm tra cấu trúc data
-      if (result.containsKey('data') && result['data'] is List) {
-        stories = _parseStories(result['data']);
-      } else if (result.containsKey('items') && result['items'] is List) {
-        stories = _parseStories(result['items']);
-      } else {
-        // Tìm trường có thể chứa danh sách truyện
-        result.forEach((key, value) {
-          if (value is List && stories.isEmpty) {
-            stories = _parseStories(value);
-          }
-        });
-      }
-    } catch (e) {
-      debugLogs += 'Error parsing stories data: $e\n';
-    }
-
-    return stories;
-  }
-
-  // Tạo dữ liệu mẫu cho một danh mục
-  List<Story> _createSampleDataForCategory() {
-    List<Story> sampleStories = [];
-
-    for (int i = 0; i < 5; i++) {
-      sampleStories.add(
-        Story(
-          id: 'sample$i',
-          title: 'Truyện mẫu ${i + 1}',
-          description: 'Đây là truyện mẫu khi không thể kết nối API',
-          thumbnail: 'lib/images/book.jpg',
-          categories: ['Mẫu'],
-          status: 'Đang cập nhật',
-          views: 100,
-          chapters: 10,
-          updatedAt: DateTime.now().toString(),
-          slug: 'truyen-mau-${i + 1}',
-        ),
-      );
-    }
-
-    return sampleStories;
-  }
-
-  // Helper method để chuyển đổi dữ liệu JSON thành danh sách Story
-  List<Story> _parseStories(dynamic data) {
-    List<Story> stories = [];
-
-    try {
-      if (data is List) {
-        print('Parsing ${data.length} stories from data');
-
-        // In ra 1-2 mục dữ liệu đầu tiên để hiểu cấu trúc
-        if (data.isNotEmpty && data[0] is Map) {
-          print('Sample item 0: ${data[0].keys.toList()}');
-          if (data.length > 1) {
-            print('Sample item 1: ${data[1].keys.toList()}');
-          }
-        }
-
-        for (var item in data) {
-          try {
-            if (item is Map<String, dynamic>) {
-              stories.add(Story.fromJson(item));
-            }
-          } catch (e) {
-            print('Error parsing story item: $e');
-          }
-        }
-
-        print('Successfully parsed ${stories.length} stories');
-      }
-    } catch (e) {
-      print('Error parsing stories data: $e');
-    }
-
-    return stories;
-  }
-
-  // Hàm tạo tiêu đề với điều hướng
-  Widget _buildSectionTitle(
-      BuildContext context, String title, List<Story> stories) {
-    return GestureDetector(
-      onTap: () {
-        // Nếu bấm vào thể loại truyện
-        if (title == "Thể loại") {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CategoriesPage(),
+    return BlocBuilder<HomeCubit, HomeState>(
+      builder: (context, state) {
+        if (state is HomeLoading) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Đang tải dữ liệu...'),
+              ],
             ),
           );
         }
-        // Còn lại là các danh mục khác - có thể mở trang danh sách đầy đủ
+
+        if (state is HomeError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  state.message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<HomeCubit>().loadHomeData(forceRefresh: true);
+                  },
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is HomeLoaded) {
+          return SafeArea(
+            child: Column(
+              children: [
+                // Header với back button và search (layout gốc)
+                const Padding(
+                  padding: EdgeInsets.only(top: 10, right: 20, left: 20),
+                  child: BackToIntroPage(),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 15, bottom: 10),
+                  child: PhanDuoiBackToIntroPage(),
+                ),
+
+                // Cache status indicator (tính năng mới)
+                if (state.needsRefresh)
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    color: Colors.orange.withOpacity(0.1),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            size: 16, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Dữ liệu có thể đã cũ. Kéo xuống để làm mới.',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.orange),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            context.read<HomeCubit>().refresh();
+                          },
+                          child: const Text('Làm mới',
+                              style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // TabBar (layout gốc với icons)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorColor:
+                        Colors.green, // Thanh bên dưới màu xanh lá cây
+                    labelColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white // Màu text cho dark mode
+                        : Colors.grey[500], // Màu text cho light mode
+                    unselectedLabelColor: Colors.grey,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold, // Làm đậm text khi được chọn
+                      fontSize: 16,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.normal,
+                      fontSize: 16,
+                    ),
+                    tabs: const [
+                      Tab(
+                        //icon: Icon(Icons.photo_library),
+                        text: 'Truyện tranh',
+                      ),
+                      Tab(
+                        //icon: Icon(Icons.book),
+                        text: 'Truyện chữ',
+                      ),
+                    ],
+                  ),
+                ),
+
+                // TabBarView
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Tab Truyện tranh
+                      _buildTabContent(state.comicCategories, 'comic'),
+                      // Tab Truyện chữ
+                      _buildTabContent(state.novelCategories, 'novel'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Initial state
+        return const Center(
+          child: Text('Chưa có dữ liệu'),
+        );
       },
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20, left: 20),
+    );
+  }
+
+  // Widget để build TabBar content
+  Widget _buildTabContent(Map<String, List<Story>> categories, String tabType) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<HomeCubit>().refresh();
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            // Hiển thị các danh mục
+            for (var category in categories.entries)
+              _buildCategorySection(category.key, category.value),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(
+      BuildContext context, String title, List<Story> stories) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to section stories page để hiển thị tất cả truyện trong section
+          try {
+            // Map tiêu đề section với section type để gọi API tương ứng
+            String? sectionType = _getSectionType(title);
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SectionStoriesPage(
+                  sectionTitle: title,
+                  stories: stories,
+                  sectionType: sectionType,
+                ),
+              ),
+            );
+          } catch (e) {
+            print('Error navigating to section stories: $e');
+            // Hiển thị thông báo lỗi cho người dùng
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Không thể mở danh sách truyện: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -246,132 +273,103 @@ class _BookPageState extends State<BookPage> {
     );
   }
 
-  // Hàm tạo danh sách ngang cho truyện
+  // Hàm tạo danh sách ngang cho truyện (style gốc)
   Widget _buildHorizontalStoryList(List<Story> stories) {
-    return SizedBox(
+    // Đảm bảo danh sách không null và không có phần tử null
+    final validStories = stories.where((story) => story != null).toList();
+
+    return Container(
       height: 220,
-      child: stories.isEmpty
+      constraints: const BoxConstraints(minHeight: 220),
+      child: validStories.isEmpty
           ? const Center(child: Text('Không có dữ liệu'))
           : ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: stories.length,
+              itemCount: validStories.length,
+              physics: const AlwaysScrollableScrollPhysics(),
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               itemBuilder: (context, index) {
-                return StoryTile(
-                  story: stories[index],
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StoryDetailPage(
-                          story: stories[index],
-                        ),
-                      ),
-                    );
-                  },
-                );
+                if (index >= 0 && index < validStories.length) {
+                  final story = validStories[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: StoryTile(
+                      story: story,
+                      onTap: () {
+                        // Thêm kiểm tra null và thiết lập onTap an toàn
+                        try {
+                          if (story != null && story.id.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StoryDetailPage(
+                                  story: story,
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          print('Error navigating to story detail: $e');
+                          // Hiển thị thông báo lỗi cho người dùng
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Không thể mở chi tiết truyện: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  );
+                } else {
+                  return const SizedBox(width: 120, height: 200);
+                }
               },
             ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _errorMessage.isNotEmpty
-            ? Center(child: Text(_errorMessage))
-            : SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SafeArea(
-                      child: const Padding(
-                        padding: EdgeInsets.only(top: 5, bottom: 10),
-                        child: PhanDuoiBackToIntroPage(),
-                      ),
-                    ),
-
-                    // // Debug Info - chỉ hiển thị trong chế độ development
-                    // if (_debugInfo.isNotEmpty)
-                    //   GestureDetector(
-                    //     onTap: () {
-                    //       showDialog(
-                    //         context: context,
-                    //         builder: (context) => AlertDialog(
-                    //           title: const Text('Debug Info'),
-                    //           content: SingleChildScrollView(
-                    //             child: Text(_debugInfo),
-                    //           ),
-                    //           actions: [
-                    //             TextButton(
-                    //               onPressed: () => Navigator.pop(context),
-                    //               child: const Text('Đóng'),
-                    //             ),
-                    //           ],
-                    //         ),
-                    //       );
-                    //     },
-                    //     child: Padding(
-                    //       padding: const EdgeInsets.all(8.0),
-                    //       child: Container(
-                    //         padding: const EdgeInsets.all(8),
-                    //         color: Colors.amber.withOpacity(0.3),
-                    //         child: const Text('Tap for Debug Info'),
-                    //       ),
-                    //     ),
-                    //   ),
-
-                    // // Thêm nút tìm kiếm và thể loại
-                    // Padding(
-                    //   padding: const EdgeInsets.symmetric(horizontal: 20),
-                    //   child: Row(
-                    //     children: [
-                    //       Expanded(
-                    //         child: GestureDetector(
-                    //           onTap: () {
-                    //             Navigator.push(
-                    //               context,
-                    //               MaterialPageRoute(
-                    //                 builder: (context) => const SearchPage(),
-                    //               ),
-                    //             );
-                    //           },
-                    //           child: Container(
-                    //             padding: const EdgeInsets.all(12),
-                    //             decoration: BoxDecoration(
-                    //               color: Colors.grey[200],
-                    //               borderRadius: BorderRadius.circular(10),
-                    //             ),
-                    //             child: const Row(
-                    //               children: [
-                    //                 Icon(Icons.search),
-                    //                 SizedBox(width: 8),
-                    //                 Text('Tìm kiếm truyện'),
-                    //               ],
-                    //             ),
-                    //           ),
-                    //         ),
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
-
-                    // // Danh mục thể loại
-                    // _buildSectionTitle(context, "Thể loại", []),
-
-                    // Các danh mục truyện
-                    for (var category in _categories.entries) ...[
-                      _buildSectionTitle(context, category.key, category.value),
-                      _buildHorizontalStoryList(category.value),
-                    ],
-                  ],
-                ),
-              );
+  // Phương thức để map tiêu đề section với API type
+  String? _getSectionType(String title) {
+    switch (title) {
+      case 'Truyện mới cập nhật':
+        return 'truyen-moi';
+      case 'Đang phát hành':
+        return 'dang-phat-hanh';
+      case 'Hoàn thành':
+        return 'hoan-thanh';
+      case 'Sắp ra mắt':
+        return 'sap-ra-mat';
+      case 'Ebook mới':
+        return 'ebook-moi';
+      case 'Truyện chữ đang phát hành':
+        return 'dang-phat-hanh'; // Sử dụng chung với truyện tranh
+      case 'Truyện chữ hoàn thành':
+        return 'hoan-thanh'; // Sử dụng chung với truyện tranh
+      default:
+        return null; // Không có API tương ứng
+    }
   }
-}
 
-// Utility class
-class Math {
-  static int min(int a, int b) {
-    return a < b ? a : b;
+  // Phương thức mới để xây dựng một phần danh mục an toàn (style gốc)
+  Widget _buildCategorySection(String title, List<Story>? stories) {
+    // Nếu danh sách null hoặc rỗng, bỏ qua
+    if (stories == null || stories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    try {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(context, title, stories),
+          _buildHorizontalStoryList(stories),
+        ],
+      );
+    } catch (e) {
+      print('Error building category section $title: $e');
+      return const SizedBox.shrink();
+    }
   }
 }

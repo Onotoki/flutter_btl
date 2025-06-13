@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/search_page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io'; // Thêm import này để sử dụng File
 import 'package:btl/pages/Intropage/intro_page.dart';
@@ -14,7 +16,6 @@ class Person extends StatelessWidget {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,10 @@ class Person extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Phần header thông tin user
             _buildUserHeader(context),
+
+            // Danh sách chức năng
             Expanded(
               child: _buildFunctionList(context),
             ),
@@ -40,39 +44,37 @@ class Person extends StatelessWidget {
     return Container(
       color: bgColor,
       padding: const EdgeInsets.all(16),
-      child: user != null
-          ? _buildLoggedInUser(user, context)
-          : _buildGuestUser(context),
+      child:
+          user != null ? _buildLoggedInUser(user, context) : _buildGuestUser(),
     );
   }
 
   Widget _buildLoggedInUser(User user, BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore.collection('users').doc(user.email).snapshots(),
+      stream: _firestore.collection('users').doc(user.uid).snapshots(),
       builder: (context, snapshot) {
+        // Xử lý loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildUserPlaceholder();
         }
 
+        // Xử lý lỗi
         if (snapshot.hasError) {
           debugPrint('Error loading user data: ${snapshot.error}');
           return _buildUserInfo(
-            displayName: 'UserName',
+            displayName: user.displayName ?? 'UserName',
             email: user.email ?? 'No email',
             photoUrl: user.photoURL,
             context: context,
           );
         }
 
+        // Lấy dữ liệu từ Firestore
         final userData = snapshot.data?.data() as Map<String, dynamic>?;
-        final nickname = userData?['nickname'];
-        final email = user.email ?? 'No email';
-        final photoUrl = userData?['profileImage'];
-
         return _buildUserInfo(
-          displayName: nickname ?? email.split('@').first,
-          email: email,
-          photoUrl: photoUrl,
+          displayName: userData?['nickname'] ?? user.displayName ?? 'UserName',
+          email: user.email ?? 'No email',
+          photoUrl: userData?['profileImage'] ?? user.photoURL,
           context: context,
         );
       },
@@ -92,15 +94,9 @@ class Person extends StatelessWidget {
       onTap: () => _showEditDialog(context, displayName, email),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => _pickImage(context),
-            child: CircleAvatar(
-              radius: 36,
-              backgroundImage: _getImageProvider(photoUrl),
-              child: photoUrl == null || photoUrl.isEmpty
-                  ? Icon(Icons.person, size: 36, color: Colors.white)
-                  : null,
-            ),
+          CircleAvatar(
+            radius: 36,
+            backgroundImage: _getImageProvider(photoUrl),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -133,103 +129,14 @@ class Person extends StatelessWidget {
     );
   }
 
-  Future<void> _pickImage(BuildContext context) async {
-    final User? user = _auth.currentUser;
-    if (user == null) return;
-
-    final isDarkTheme = context.read<ThemeCubit>().state is DarkTheme;
-
-    try {
-      final source = await showDialog<ImageSource>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Chọn ảnh đại diện'),
-          content: const Text('Bạn muốn chọn ảnh từ đâu?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, ImageSource.gallery),
-              child: Row(
-                children: [
-                  Icon(Icons.photo_library,
-                      color: isDarkTheme ? Colors.white : Colors.black),
-                  const SizedBox(width: 8),
-                  Text('Thư viện ảnh',
-                      style: TextStyle(
-                          color: isDarkTheme ? Colors.white : Colors.black)),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, ImageSource.camera),
-              child: Row(
-                children: [
-                  Icon(Icons.camera_alt,
-                      color: isDarkTheme ? Colors.white : Colors.black),
-                  const SizedBox(width: 8),
-                  Text('Chụp ảnh mới',
-                      style: TextStyle(
-                          color: isDarkTheme ? Colors.white : Colors.black)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-
-      if (source == null) return;
-
-      final pickedFile = await _picker.pickImage(source: source);
-      if (pickedFile == null) return;
-
-      // Hiển thị loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      // Lưu đường dẫn ảnh vào Firestore
-      await _firestore.collection('users').doc(user.email).update({
-        'profileImage': pickedFile.path,
-      });
-
-      // Đóng dialog loading
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cập nhật ảnh đại diện thành công'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
   ImageProvider _getImageProvider(String? url) {
     if (url == null || url.isEmpty) {
       return const AssetImage('lib/images/default_avatar.png');
     }
-
-    if (url.startsWith('http')) {
-      return NetworkImage(url);
-    } else if (url.startsWith('lib/')) {
-      return AssetImage(url);
-    } else {
-      return FileImage(File(url));
-    }
+    return url.startsWith('http') ? NetworkImage(url) : AssetImage(url);
   }
 
-  Widget _buildGuestUser(BuildContext context) {
+  Widget _buildGuestUser() {
     return Row(
       children: [
         const CircleAvatar(
@@ -248,20 +155,11 @@ class Person extends StatelessWidget {
                 color: Colors.grey[600],
               ),
             ),
-            GestureDetector(
-              onTap: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const IntroPage()),
-                  (_) => false,
-                );
-              },
-              child: Text(
-                'Đăng nhập để mở khóa tính năng',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
+            Text(
+              'Đăng nhập để mở khóa tính năng',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
               ),
             ),
           ],
@@ -328,6 +226,7 @@ class Person extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
+    final bgColor = isDarkTheme ? Colors.grey[900] : Colors.white;
     final textColor = isDarkTheme ? Colors.white : Colors.black;
     final borderColor = isDarkTheme ? Colors.grey[800]! : Colors.grey[300]!;
 
@@ -336,7 +235,7 @@ class Person extends StatelessWidget {
         border: Border(
           top: BorderSide(color: borderColor, width: 1),
         ),
-        color: isDarkTheme ? Colors.grey[900] : Colors.white,
+        color: bgColor,
       ),
       child: ListTile(
         leading: Icon(icon, color: textColor),
@@ -349,21 +248,29 @@ class Person extends StatelessWidget {
 
   Widget _buildThemeSwitchTile(BuildContext context) {
     final isDarkTheme = context.watch<ThemeCubit>().state is DarkTheme;
+    final bgColor = isDarkTheme ? Colors.grey[900] : Colors.white;
     final textColor = isDarkTheme ? Colors.white : Colors.black;
+    final borderColor = isDarkTheme ? Colors.grey[800]! : Colors.grey[300]!;
 
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.grey[300]!, width: 1),
+          top: BorderSide(color: borderColor, width: 1),
         ),
+        color: bgColor,
       ),
       child: ListTile(
         leading: Icon(Icons.color_lens, color: textColor),
-        title: Text('Chế độ sáng/tối', style: TextStyle(color: textColor)),
+        title: Text('Chế độ tối', style: TextStyle(color: textColor)),
         trailing: Switch(
           value: isDarkTheme,
           onChanged: (value) {
-            context.read<ThemeCubit>().toggleTheme();
+            // Gọi ThemeCubit để thay đổi theme
+            if (value) {
+              context.read<ThemeCubit>().darkThemeEvent();
+            } else {
+              context.read<ThemeCubit>().lightThemeEvent();
+            }
           },
           activeColor: Colors.greenAccent,
         ),
@@ -391,7 +298,6 @@ class Person extends StatelessWidget {
   }
 
   void _showLogoutConfirmation(BuildContext context) {
-    final isDarkTheme = context.read<ThemeCubit>().state is DarkTheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -400,8 +306,7 @@ class Person extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Hủy', style: TextStyle(
-                          color: isDarkTheme ? Colors.white : Colors.black)),
+            child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () async {
@@ -454,13 +359,9 @@ class Person extends StatelessWidget {
           ),
         ),
         actions: [
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: const Text('Hủy', style: TextStyle(color: Colors.white)),
+            child: const Text('Hủy'),
           ),
           ElevatedButton(
             onPressed: () => _updateUserInfo(
@@ -469,10 +370,7 @@ class Person extends StatelessWidget {
               _emailController.text,
               _passwordController.text,
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             child: const Text('Lưu', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -490,11 +388,13 @@ class Person extends StatelessWidget {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      await _firestore.collection('users').doc(user.email).update({
+      // Cập nhật trong Firestore
+      await _firestore.collection('users').doc(user.uid).update({
         'nickname': newName,
         if (newEmail != user.email) 'email': newEmail,
       });
 
+      // Cập nhật trong Firebase Auth
       if (newName != user.displayName) {
         await user.updateDisplayName(newName);
       }

@@ -19,15 +19,41 @@ class ContentFilter {
     'josei',
     'seinen',
     'harem',
-    'gender-bender,'
-        'doujinshi',
+    'gender-bender',
+    'doujinshi',
     'dam-my',
+  ];
+
+  // Danh sách thể loại dành cho truyện chữ
+  static final List<String> textNovelCategories = [
+    'tiểu thuyết',
+    // 'novel',
+    // 'văn học',
+    // 'truyện chữ',
+    // 'ebook',
+    // 'light novel',
+    // 'trinh thám',
+    // 'huyền huyễn',
+    // 'kiếm hiệp',
+    // 'truyện ngắn',
+    // 'tâm lý',
+    // 'lịch sử',
+    // 'cổ đại',
+    // 'xuân thu',
+    // 'hiện đại',
   ];
 
   // Kiểm tra xem một thể loại có phải là thể loại người lớn không
   static bool isAdultCategory(String categoryName) {
     final lowerCaseName = categoryName.toLowerCase();
     return adultKeywords.any((keyword) => lowerCaseName.contains(keyword));
+  }
+
+  // Kiểm tra xem một thể loại có phải là thể loại truyện chữ không
+  static bool isNovelCategory(String categoryName) {
+    final lowerCaseName = categoryName.toLowerCase();
+    return textNovelCategories
+        .any((keyword) => lowerCaseName.contains(keyword));
   }
 
   // Kiểm tra xem một truyện có thuộc thể loại người lớn không
@@ -50,8 +76,64 @@ class ContentFilter {
     return false;
   }
 
+  // Kiểm tra xem một truyện có phải là truyện chữ không dựa trên thể loại và tên
+  static bool detectNovelByCategory(Story story) {
+    // Nếu đã có itemType là 'ebook' hoặc 'text_story' thì đó chính là truyện chữ
+    if (story.isNovel) {
+      return true;
+    }
+
+    // Kiểm tra theo thể loại
+    if (story.categories.isNotEmpty) {
+      for (String category in story.categories) {
+        if (isNovelCategory(category)) {
+          return true;
+        }
+      }
+    }
+
+    // Kiểm tra theo tiêu đề
+    final lowerCaseTitle = story.title.toLowerCase();
+    if (textNovelCategories
+        .any((keyword) => lowerCaseTitle.contains(keyword))) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Phân loại truyện thành truyện tranh hoặc truyện chữ nếu chưa được phân loại
+  static void classifyStoryTypes(List<Story> stories) {
+    for (var i = 0; i < stories.length; i++) {
+      if (detectNovelByCategory(stories[i])) {
+        // Nếu được phát hiện là truyện chữ nhưng chưa được đánh dấu
+        if (!stories[i].isNovel) {
+          // Tạo một bản sao của story với itemType = 'ebook'
+          stories[i] = Story(
+            id: stories[i].id,
+            title: stories[i].title,
+            description: stories[i].description,
+            thumbnail: stories[i].thumbnail,
+            categories: stories[i].categories,
+            status: stories[i].status,
+            views: stories[i].views,
+            chapters: stories[i].chapters,
+            updatedAt: stories[i].updatedAt,
+            slug: stories[i].slug,
+            authors: stories[i].authors,
+            chaptersData: stories[i].chaptersData,
+            itemType: 'ebook', // Đánh dấu là ebook
+          );
+        }
+      }
+    }
+  }
+
   // Lọc danh sách truyện, loại bỏ nội dung người lớn
   static List<Story> filterStories(List<Story> stories) {
+    // Trước tiên phân loại các story
+    classifyStoryTypes(stories);
+    // Sau đó lọc nội dung người lớn
     return stories.where((story) => !isAdultStory(story)).toList();
   }
 }

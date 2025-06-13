@@ -1,6 +1,7 @@
 import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../pages/Intropage/intro_page.dart';
 import '../pages/search_page.dart';
@@ -20,7 +21,6 @@ class BackToIntroPage extends StatelessWidget {
     final iconColor = isDarkTheme ? Colors.greenAccent : Colors.green[800];
     final textColor = isDarkTheme ? Colors.white : Colors.black;
     return Container(
-      
       constraints: BoxConstraints(
         minHeight: isLoggedIn ? 70 : 110, // Thay maxHeight bằng minHeight
         maxHeight: 110, // Giới hạn tối đa

@@ -24,9 +24,6 @@ class _HomePageState extends State<HomePage> {
     //Categories
     const CategoriesPage(),
 
-    //Categories
-    // CategoriesPage(),
-
     //Library
     const LibraryPage(),
 

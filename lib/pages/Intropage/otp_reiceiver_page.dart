@@ -35,7 +35,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Incorrect OTP. Please try again.'),
+          content: Text('Mã OTP không đúng. Vui lòng thử lại.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -51,7 +51,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Email already registered. Please log in.'),
+            content: Text('Email đã được đăng ký. Vui lòng đăng nhập.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -81,7 +81,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
       // Đăng nhập thành công
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Registration successful!'),
+        content: Text('Đăng ký thành công!'),
         backgroundColor: Colors.green,
         duration: Duration(seconds: 2),
       ));
@@ -96,7 +96,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text('Lỗi: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -108,18 +108,19 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF003E32),
       appBar: AppBar(
-        title: const Text("Verify OTP", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title:
+            const Text("Xác thực OTP", style: TextStyle(color: Colors.white)),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         automaticallyImplyLeading: false,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.close, size: 30, color: Colors.white),
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
+                MaterialPageRoute(builder: (context) => const IntroPage()),
               );
             },
           ),
@@ -130,37 +131,53 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 30),
+            const Spacer(),
             const Icon(Icons.email_outlined,
                 size: 60, color: Colors.greenAccent),
+            const SizedBox(height: 20),
+            const Text(
+              "Xác thực email",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 10),
-            const Text("Enter the verification code sent to:",
-                style: TextStyle(color: Colors.white70, fontSize: 14)),
-            const SizedBox(height: 6),
-            Text(widget.email,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
-            const SizedBox(height: 30),
-            TextField(
-              controller: otpController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "OTP code",
-                labelStyle: const TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Colors.white10,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.greenAccent),
-                ),
+            Text(
+              "Chúng tôi đã gửi mã xác thực đến ${widget.email}",
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
               ),
             ),
             const SizedBox(height: 30),
+
+            // OTP Input
+            TextField(
+              controller: otpController,
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white10,
+                labelText: "Nhập mã OTP",
+                labelStyle: const TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.greenAccent),
+                ),
+                counterText: '',
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Verify Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -182,6 +199,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
                       ),
               ),
             ),
+            const Spacer(),
           ],
         ),
       ),

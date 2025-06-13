@@ -1,5 +1,7 @@
 import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';
+import 'package:btl/cubit/home_cubit.dart';
+import 'package:btl/cubit/categories_cubit.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/info_book.dart';
 import 'package:btl/pages/search_page.dart';
@@ -21,8 +23,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ThemeCubit()..loadTheme(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ThemeCubit()..loadTheme()),
+        BlocProvider(create: (_) => HomeCubit()),
+        BlocProvider(create: (_) => CategoriesCubit()),
+      ],
       child: const AppRoot(),
     );
   }

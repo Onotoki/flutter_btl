@@ -6,6 +6,7 @@ class Button_Info extends StatelessWidget {
   final Color foregroundColor;
   final int flex;
   final VoidCallback ontap;
+  final IconData? icon;
 
   const Button_Info({
     super.key,
@@ -14,27 +15,55 @@ class Button_Info extends StatelessWidget {
     required this.foregroundColor,
     required this.flex,
     required this.ontap,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       flex: flex,
-      child: ElevatedButton(
-        onPressed: ontap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: foregroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Container(
+        height: 48, // Cố định chiều cao nút
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: backgroundColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 18),
+        child: ElevatedButton(
+          onPressed: ontap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
+            elevation: 0, // Không dùng elevation mặc định
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(icon, size: 20),
+                ),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -11,18 +13,22 @@ class Comment extends StatefulWidget {
 }
 
 class _CommentState extends State<Comment> {
+  String? userName;
   Future<void> addComment({
+    required String userName,
     required String userID,
     required String bookID,
     String? parentID,
     required String content,
   }) async {
+    print('Chạy hàm add comemnt');
     await FirebaseFirestore.instance
         .collection('books')
         .doc(bookID)
         .collection('comments')
         .add(
       {
+        'userName': userName,
         'userID': userID,
         'parentID': parentID,
         'content': content,
@@ -54,13 +60,31 @@ class _CommentState extends State<Comment> {
     }
   }
 
+  Future<void> getNameUser(String id) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(id)
+        .get()
+        .then((DocumentSnapshot documentSnapshot) {
+      if (documentSnapshot.exists) {
+        print('Document data: ${documentSnapshot.data()}');
+
+        final data = documentSnapshot.data() as Map<String, dynamic>;
+        userName = data['nickname'];
+        print('username: ${data['nickname']}');
+      } else {
+        print('Document does not exist on the database');
+      }
+    });
+  }
+
   String? userTag;
   String? rootCommentID;
   TextEditingController commentController = TextEditingController();
 
   void replyFuction(QueryDocumentSnapshot comment) {
     setState(() {
-      userTag = comment['userID'];
+      userTag = comment['userName'];
       rootCommentID = comment.id;
       commentController.text = ' ';
     });
@@ -76,6 +100,57 @@ class _CommentState extends State<Comment> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       uid = user.uid;
+      if (user.email != null) {
+        getNameUser(user.email!);
+      } else {
+        getNameUser(user.phoneNumber!);
+      }
+      // print('email user: ${user.displayName}');
+    }
+  }
+
+  void sendComment() async {
+    if (commentController.text.isNotEmpty && uid != null) {
+      print('object1');
+      if (rootCommentID != null) {
+        addComment(
+            userName: userName!,
+            userID: uid!,
+            bookID: widget.idBook,
+            content: '@$userTag ${commentController.text}',
+            parentID: rootCommentID);
+        await FirebaseFirestore.instance
+            .collection('books')
+            .doc(widget.idBook)
+            .collection('comments')
+            .doc(rootCommentID)
+            .update({
+          'replyCount': FieldValue.increment(1),
+        });
+        print('object12');
+      } else {
+        addComment(
+          userName: userName!,
+          userID: uid!,
+          bookID: widget.idBook,
+          content: commentController.text,
+        );
+        print('object13');
+      }
+      setState(() {
+        commentController.clear();
+        rootCommentID = null;
+        userTag = null;
+      });
+    } else if (uid == null) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Text('Vui lòng đăng nhập'),
+          );
+        },
+      );
     }
   }
 
@@ -118,59 +193,19 @@ class _CommentState extends State<Comment> {
             },
           ),
         ),
-        Container(
-          // color: Colors.grey[100],
-          padding: EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 20),
-          child: Material(
-            elevation: 4.0,
-            shadowColor: Colors.black,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom),
+        Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Container(
+            padding: EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 20),
+            child: Material(
+              elevation: 4.0,
+              shadowColor: Colors.black,
+              borderRadius: BorderRadius.circular(16),
               child: TextField(
                 autofocus: false,
                 controller: commentController,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (value) async {
-                  if (commentController.text.isNotEmpty && uid != null) {
-                    if (rootCommentID != null) {
-                      addComment(
-                          userID: uid!,
-                          bookID: widget.idBook,
-                          content: '@$userTag ${commentController.text}',
-                          parentID: rootCommentID);
-                      await FirebaseFirestore.instance
-                          .collection('books')
-                          .doc(widget.idBook)
-                          .collection('comments')
-                          .doc(rootCommentID)
-                          .update({
-                        'replyCount': FieldValue.increment(1),
-                      });
-                    } else {
-                      addComment(
-                        userID: uid!,
-                        bookID: widget.idBook,
-                        content: commentController.text,
-                      );
-                    }
-                    setState(() {
-                      commentController.clear();
-                      rootCommentID = null;
-                      userTag = null;
-                    });
-                  } else if (uid == null) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          content: Text('Vui lòng đăng nhập'),
-                        );
-                      },
-                    );
-                  }
-                },
+                textInputAction: TextInputAction.done,
                 onChanged: (value) {
                   setState(() {
                     if (value.isEmpty) {
@@ -180,6 +215,16 @@ class _CommentState extends State<Comment> {
                   });
                 },
                 decoration: InputDecoration(
+                  suffixIcon: Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 4.0),
+                    child: IconButton(
+                      onPressed: () {
+                        sendComment();
+                        FocusScope.of(context).unfocus();
+                      },
+                      icon: Icon(Icons.send),
+                    ), // _myIcon is a 48px-wide widget.
+                  ),
                   fillColor: Theme.of(context).colorScheme.secondary,
                   prefixText: userTag != null ? '@$userTag' : null,
                   prefixStyle: TextStyle(
@@ -332,7 +377,18 @@ class _CommentWidgetState extends State<CommentWidget> {
             children: [
               CircleAvatar(
                 radius: 15,
-                backgroundImage: AssetImage('assets/image/avatar.jpg'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                    color: Colors.green[300],
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${comment['userName'][0]}',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
               ),
               Expanded(
                 flex: 1,
@@ -344,7 +400,7 @@ class _CommentWidgetState extends State<CommentWidget> {
                       Row(
                         children: [
                           Text(
-                            comment['userID'],
+                            comment['userName'],
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           SizedBox(
@@ -369,11 +425,14 @@ class _CommentWidgetState extends State<CommentWidget> {
                                   ),
                                   TextSpan(
                                       text: remainingContent,
-                                      style: TextStyle(color: Colors.grey)),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface)),
                                 ],
                               ),
                             )
-                          : Text(content), //
+                          : Text(content),
                       Padding(
                         padding: const EdgeInsets.only(
                           top: 10,
@@ -381,7 +440,6 @@ class _CommentWidgetState extends State<CommentWidget> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                          spacing: 5,
                           children: [
                             GestureDetector(
                                 onTap: () {
@@ -431,7 +489,6 @@ class _CommentWidgetState extends State<CommentWidget> {
                             const SizedBox(width: 10),
                             GestureDetector(
                                 onTap: () {
-                                  // widget.replyFuction(comment);
                                   widget.replyFuction(comment);
                                 },
                                 child: Row(
@@ -450,7 +507,6 @@ class _CommentWidgetState extends State<CommentWidget> {
                           ],
                         ),
                       ),
-
                       Visibility(
                           visible: reply,
                           child: GestureDetector(
@@ -463,7 +519,6 @@ class _CommentWidgetState extends State<CommentWidget> {
                               padding: const EdgeInsets.only(top: 8.0),
                               child: Row(
                                   mainAxisAlignment: MainAxisAlignment.start,
-                                  spacing: 0,
                                   children: [
                                     Text(
                                       '${comment['replyCount']} bình luận',
@@ -481,7 +536,6 @@ class _CommentWidgetState extends State<CommentWidget> {
                   ),
                 ),
               ),
-              // Text(timeComment.toString()),
             ],
           ),
           // Replies
@@ -510,13 +564,11 @@ class _CommentWidgetState extends State<CommentWidget> {
                       }).toList(),
                     );
                   }
-                  return SizedBox
-                      .shrink(); // Không hiển thị nếu không có replies
+                  return SizedBox.shrink();
                 },
               ),
             ),
           ),
-          // Divider(),
         ],
       ),
     );

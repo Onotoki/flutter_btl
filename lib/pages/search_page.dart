@@ -126,7 +126,7 @@ class _SearchPageState extends State<SearchPage> {
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
@@ -192,8 +192,8 @@ class _SearchPageState extends State<SearchPage> {
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(8),
-                              color: Colors.amber.withOpacity(0.3),
-                              child: const Text('Tap for Debug Info'),
+                              // color: Colors.amber.withOpacity(0.3),
+                              // child: const Text('Tap for Debug Info'),
                             ),
                           ),
 
@@ -209,7 +209,7 @@ class _SearchPageState extends State<SearchPage> {
                                     gridDelegate:
                                         const SliverGridDelegateWithFixedCrossAxisCount(
                                       crossAxisCount: 3,
-                                      childAspectRatio: 0.55,
+                                      childAspectRatio: 0.5,
                                       crossAxisSpacing: 8,
                                       mainAxisSpacing: 8,
                                     ),
@@ -238,10 +238,4 @@ class _SearchPageState extends State<SearchPage> {
                     ),
     );
   }
-
-  // @override
-  // void dispose() {
-  //   searchController.dispose();
-  //   super.dispose();
-  // }
 }

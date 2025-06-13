@@ -55,9 +55,4 @@ class BookData {
     List<int> indexes = _categoriesMap[category]!;
     return indexes.map((index) => _allBooks[index]).toList();
   }
-
-  // 🔥 Added method to fetch all books 🔥
-  // static List<Book> getAllBooks() {
-  //   return allBooks;
-  // }
 }

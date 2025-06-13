@@ -39,6 +39,17 @@ class Category {
     return 0;
   }
 
+  // Bắt buộc phải có toJson() để cache
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'stories': stories,
+      'slug': slug,
+    };
+  }
+
   // Phương thức để phân tích danh sách thể loại từ API
   static List<Category> parseCategories(Map<String, dynamic> apiResponse) {
     List<Category> categories = [];

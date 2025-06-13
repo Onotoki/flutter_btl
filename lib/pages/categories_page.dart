@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:btl/api/otruyen_api.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:btl/cubit/categories_cubit.dart';
+import 'package:btl/cubit/cacheable_cubit.dart';
 import 'package:btl/models/category.dart';
 import 'package:btl/pages/category_stories_page.dart';
-import 'package:btl/utils/content_filter.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -11,101 +12,111 @@ class CategoriesPage extends StatefulWidget {
   State<CategoriesPage> createState() => _CategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage> {
-  List<Category> categories = [];
-  bool isLoading = true;
-  String errorMessage = '';
-  String debugInfo = '';
+class _CategoriesPageState extends State<CategoriesPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true; // Keep state when switching tabs
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
-  }
-
-  Future<void> _loadCategories() async {
-    String logs = '';
-    try {
-      logs += 'Starting to load categories...\n';
-      final result = await OTruyenApi.getCategories();
-
-      logs += 'Categories API Response keys: ${result.keys.toList()}\n';
-
-      // Xử lý theo cấu trúc API OTruyen - đúng cấu trúc trả về là "items" không phải "categories"
-      if (result.containsKey('items') && result['items'] is List) {
-        logs += 'Found items list in response\n';
-        List<dynamic> categoriesData = result['items'];
-        logs += 'Categories count: ${categoriesData.length}\n';
-
-        List<Category> loadedCategories = [];
-        for (var categoryData in categoriesData) {
-          if (categoryData is Map<String, dynamic>) {
-            try {
-              Category category = Category.fromJson(categoryData);
-
-              // Kiểm tra xem có phải là thể loại người lớn không
-              if (!ContentFilter.isAdultCategory(category.name)) {
-                loadedCategories.add(category);
-              } else {
-                logs += 'Filtered out adult category: ${category.name}\n';
-              }
-            } catch (e) {
-              logs += 'Error parsing category: $e\n';
-            }
-          }
-        }
-
-        setState(() {
-          categories = loadedCategories;
-          isLoading = false;
-          debugInfo = logs;
-        });
-
-        logs +=
-            'Successfully loaded ${categories.length} categories after filtering\n';
-        print(logs);
-      } else {
-        logs +=
-            'No items found in response structure. Available keys: ${result.keys.toList()}\n';
-        throw Exception('Invalid API response structure');
-      }
-    } catch (e) {
-      logs += 'Error loading categories: $e\n';
-      print(logs);
-      setState(() {
-        errorMessage = 'Không thể tải danh sách thể loại: $e';
-        isLoading = false;
-        debugInfo = logs;
-      });
-    }
+    // Load categories using cached cubit
+    context.read<CategoriesCubit>().loadData();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thể loại truyện'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Force refresh categories
+              context.read<CategoriesCubit>().refresh();
+            },
+          ),
+        ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage))
-              : categories.isEmpty
-                  ? const Center(child: Text('Không có thể loại nào'))
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(10),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1.5,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        return _buildCategoryCard(categories[index]);
-                      },
-                    ),
+      body: BlocBuilder<CategoriesCubit, CacheableState<List<Category>>>(
+        builder: (context, state) {
+          if (state is CacheableLoading<List<Category>>) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Đang tải thể loại...'),
+                ],
+              ),
+            );
+          } else if (state is CacheableLoaded<List<Category>>) {
+            final categories = state.data;
+
+            if (categories.isEmpty) {
+              return const Center(
+                child: Text('Không có thể loại nào'),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<CategoriesCubit>().refresh();
+                // Wait for the refresh to complete
+                await Future.delayed(const Duration(seconds: 1));
+              },
+              child: GridView.builder(
+                padding: const EdgeInsets.all(10),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.5,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  return _buildCategoryCard(categories[index]);
+                },
+              ),
+            );
+          } else if (state is CacheableError<List<Category>>) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    state.message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<CategoriesCubit>().refresh();
+                    },
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Initial state
+          return const Center(
+            child: Text('Chưa có dữ liệu thể loại'),
+          );
+        },
+      ),
     );
   }
 

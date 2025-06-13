@@ -1,10 +1,13 @@
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
 import 'package:btl/components/info_book_widgets.dart/rate_widget.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/models/chapter.dart';
 import 'package:btl/pages/chapter_page.dart';
+import 'package:btl/pages/epub_chapter_page.dart';
 
 class StoryDetailPage extends StatefulWidget {
   final Story story;
@@ -18,31 +21,71 @@ class StoryDetailPage extends StatefulWidget {
   State<StoryDetailPage> createState() => _StoryDetailPageState();
 }
 
-// để thực hiện đánh giá và comment có 2 trường hợp
-// th1: chưa có bất cứ ai comment hay đánh giá(khi có người đầu tiên thực hiện thì sẽ gửi id sách kèm thông tin comment hay đánh lên firebase)
-// th2: đã comment hoặc đánh giá (kéo về để hiển thị và thêm mới)
-// Kiểm tra xem id của sách đã có trên firebase chưa - nếu chưa hiển thị chưa có đánh giá, comment - nếu có thì kéo về hiển thị
-
 class _StoryDetailPageState extends State<StoryDetailPage> {
   bool isLoading = true;
   String errorMessage = '';
-  Map<String, dynamic> comicDetail = {};
+  Map<String, dynamic> storyDetail = {};
   List<Chapter> chapters = [];
   String debugInfo = '';
   String storyDescription = '';
+  String novelContent = ''; // Nội dung đầy đủ của truyện chữ (nếu có)
+
+  // Firebase variables for reading progress
+  String? uid;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? readingProgressStream;
+  int continueReadingChapterIndex = 0;
 
   @override
   void initState() {
     super.initState();
     storyDescription = widget.story.description; // Lưu mô tả ban đầu
-    _loadComicDetail();
+
+    // Initialize Firebase auth
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      uid = user.uid;
+      _initializeReadingProgressStream();
+    }
+
+    _loadDetail();
   }
 
-  Future<void> _loadComicDetail() async {
+  void _initializeReadingProgressStream() {
+    if (uid == null) return;
+
+    readingProgressStream = FirebaseFirestore.instance
+        .collection('user_reading')
+        .doc(uid)
+        .collection('books_reading')
+        .doc(widget.story.slug)
+        .snapshots();
+  }
+
+  Future<void> _loadDetail() async {
     String logs = '';
     try {
-      logs += 'Đang tải thông tin chi tiết truyện: ${widget.story.slug}\n';
+      logs += 'Đang tải thông tin chi tiết: ${widget.story.slug}\n';
+      logs += 'Loại truyện: ${widget.story.itemType}\n';
 
+      // Xử lý dựa trên loại truyện
+      if (widget.story.isNovel) {
+        await _loadNovelDetail(logs);
+      } else {
+        await _loadComicDetail(logs);
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Không thể tải thông tin: $e';
+        debugInfo = '$logs\nLỗi: $e';
+        isLoading = false;
+        print('Lỗi khi tải chi tiết: $e');
+      });
+    }
+  }
+
+  // Tải thông tin truyện tranh
+  Future<void> _loadComicDetail(String logs) async {
+    try {
       // Lưu ý: trong API mới, cần truyền slug của truyện thay vì id
       final result = await OTruyenApi.getComicDetail(widget.story.slug);
       logs += 'Chi tiết API Response keys: ${result.keys.toList()}\n';
@@ -87,15 +130,73 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
 
         debugInfo = logs;
         isLoading = false;
-        print(logs);
       });
     } catch (e) {
+      throw Exception('Lỗi khi tải chi tiết truyện tranh: $e');
+    }
+  }
+
+  // Tải thông tin truyện chữ
+  Future<void> _loadNovelDetail(String logs) async {
+    try {
+      // Đối với truyện chữ, sử dụng endpoint riêng
+      final result = await OTruyenApi.getNovelContent(widget.story.slug);
+      logs += 'Chi tiết API Response keys: ${result.keys.toList()}\n';
+
+      // Xử lý kết quả API
+      if (result.containsKey('item') && result['item'] is Map) {
+        final item = result['item'];
+
+        // Cập nhật thông tin cơ bản của truyện
+        if (item.containsKey('description') &&
+            item['description'].toString().isNotEmpty) {
+          storyDescription = item['description'].toString();
+          logs += 'Đã cập nhật mô tả từ API\n';
+        }
+      }
+
+      // Xử lý nội dung truyện chữ
+      if (result.containsKey('content') && result['content'] is Map) {
+        final content = result['content'];
+
+        // Xử lý các chương
+        if (content.containsKey('chapters') && content['chapters'] is List) {
+          final chaptersData = content['chapters'];
+          chapters = Chapter.fromNovelChapters(chaptersData);
+          logs += 'Đã tạo ${chapters.length} chapter từ nội dung truyện chữ\n';
+        }
+
+        // Xử lý nội dung đầy đủ (nếu không chia chương)
+        if (content.containsKey('content') &&
+            content['content'].toString().isNotEmpty) {
+          novelContent = content['content'].toString();
+          logs += 'Đã lưu nội dung đầy đủ của truyện chữ\n';
+
+          // Nếu không có chương nhưng có nội dung, tạo một chương duy nhất
+          if (chapters.isEmpty) {
+            chapters = [
+              Chapter(
+                id: 'full_content',
+                title: 'Nội dung đầy đủ',
+                name: '1',
+                apiData: '',
+                fileName: '',
+                content: novelContent,
+                isTextContent: true,
+              )
+            ];
+            logs += 'Đã tạo một chương duy nhất từ nội dung đầy đủ\n';
+          }
+        }
+      }
+
       setState(() {
-        errorMessage = 'Không thể tải thông tin truyện: $e';
-        debugInfo = '$logs\nLỗi: $e';
+        storyDetail = result; // Lưu toàn bộ result để sử dụng sau này
+        debugInfo = logs;
         isLoading = false;
-        print('Lỗi khi tải chi tiết truyện: $e');
       });
+    } catch (e) {
+      throw Exception('Lỗi khi tải chi tiết truyện chữ: $e');
     }
   }
 
@@ -112,6 +213,38 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
       ));
     }
     chapters = sampleChapters;
+  }
+
+  void _navigateToChapter(Chapter chapter, int index) {
+    if (widget.story.isNovel) {
+      // Tất cả truyện chữ đều sử dụng EPUB reader
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EpubChapterPage(
+            story: widget.story,
+            chapterNumber: index + 1, // Chuyển từ index thành chapter number
+            chapterTitle: chapter.title,
+          ),
+        ),
+      );
+    } else {
+      // Điều hướng đến trang đọc truyện tranh với idBook
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChapterPage(
+            storySlug: widget.story.slug,
+            chapterTitle: chapter.title,
+            chapterNumber: int.tryParse(chapter.name) ?? 0,
+            chapterApiData: chapter.apiData,
+            allChapters: chapters,
+            currentChapterIndex: index,
+            idBook: widget.story.slug, // Truyền idBook để lưu tiến độ đọc
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -138,34 +271,34 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Debug info button
-                      if (debugInfo.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Debug Info'),
-                                content: SingleChildScrollView(
-                                  child: Text(debugInfo),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Đóng'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              color: Colors.amber.withOpacity(0.3),
-                              child: const Text('Xem thông tin Debug'),
-                            ),
-                          ),
-                        ),
+                      // if (debugInfo.isNotEmpty)
+                      //   GestureDetector(
+                      //     onTap: () {
+                      //       showDialog(
+                      //         context: context,
+                      //         builder: (context) => AlertDialog(
+                      //           title: const Text('Debug Info'),
+                      //           content: SingleChildScrollView(
+                      //             child: Text(debugInfo),
+                      //           ),
+                      //           actions: [
+                      //             TextButton(
+                      //               onPressed: () => Navigator.pop(context),
+                      //               child: const Text('Đóng'),
+                      //             ),
+                      //           ],
+                      //         ),
+                      //       );
+                      //     },
+                      //     child: Padding(
+                      //       padding: const EdgeInsets.all(8.0),
+                      //       child: Container(
+                      //         padding: const EdgeInsets.all(8),
+                      //         color: Colors.amber.withOpacity(0.3),
+                      //         child: const Text('Xem thông tin Debug'),
+                      //       ),
+                      //     ),
+                      //   ),
 
                       // Story info section
                       Padding(
@@ -219,6 +352,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
 
                                   Text('Lượt xem: ${widget.story.views}'),
                                   Text('Trạng thái: ${widget.story.status}'),
+                                  Text(
+                                      'Loại: ${widget.story.isNovel ? 'Truyện chữ' : 'Truyện tranh'}'),
                                   const SizedBox(height: 8),
                                   Wrap(
                                     spacing: 8,
@@ -248,33 +383,227 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                           ],
                         ),
                       ),
+                      // Reading progress and action buttons
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Button_Info(
-                              text: 'Đọc ngay',
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              flex: 3,
-                              ontap: () {},
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Button_Info(
-                              text: 'Chương',
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.green,
-                              flex: 2,
-                              ontap: () {},
-                            )
-                          ],
+                        child: uid != null && readingProgressStream != null
+                            ? StreamBuilder<DocumentSnapshot>(
+                                stream: readingProgressStream,
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData &&
+                                      snapshot.data!.exists) {
+                                    final data = snapshot.data!.data()
+                                        as Map<String, dynamic>;
+                                    final chaptersReading =
+                                        data['chapters_reading']
+                                                as Map<String, dynamic>? ??
+                                            {};
+
+                                    if (chaptersReading.isNotEmpty) {
+                                      // Tìm chương cuối cùng đã đọc
+                                      final lastChapterKey = chaptersReading
+                                          .entries
+                                          .map((e) => int.tryParse(e.key) ?? 0)
+                                          .reduce((a, b) => a > b ? a : b);
+                                      continueReadingChapterIndex =
+                                          lastChapterKey;
+
+                                      return Row(
+                                        children: [
+                                          Button_Info(
+                                            text: "Đọc tiếp",
+                                            backgroundColor: const Color(
+                                                0xFF2E7D32), // Màu xanh lá đậm hơn
+                                            foregroundColor: Colors.white,
+                                            flex: 3,
+                                            icon: Icons.play_arrow,
+                                            ontap: () {
+                                              if (chaptersReading.isNotEmpty) {
+                                                // Tìm chương đã đọc cuối cùng
+                                                final lastChapterKey =
+                                                    chaptersReading.entries
+                                                        .map((e) =>
+                                                            int.tryParse(
+                                                                e.key) ??
+                                                            0)
+                                                        .reduce((a, b) =>
+                                                            a > b ? a : b);
+
+                                                // Tìm index thực tế của chương trong mảng chapters
+                                                final actualIndex = chapters
+                                                    .indexWhere((chapter) {
+                                                  // Chuyển đổi chapter.name thành số để so sánh
+                                                  final chapterNumber =
+                                                      int.tryParse(
+                                                              chapter.name) ??
+                                                          0;
+                                                  return chapterNumber ==
+                                                      lastChapterKey;
+                                                });
+
+                                                print(
+                                                    'Tìm thấy chương $lastChapterKey ở index: $actualIndex');
+
+                                                // Nếu tìm thấy chương trong danh sách
+                                                if (actualIndex != -1) {
+                                                  _navigateToChapter(
+                                                      chapters[actualIndex],
+                                                      actualIndex);
+                                                } else {
+                                                  // Trường hợp không tìm thấy chương, áp dụng cách đơn giản
+                                                  final fallbackIndex =
+                                                      (lastChapterKey - 1)
+                                                          .clamp(
+                                                              0,
+                                                              chapters.length -
+                                                                  1);
+                                                  print(
+                                                      'Không tìm thấy chương $lastChapterKey, sử dụng fallback index: $fallbackIndex');
+                                                  _navigateToChapter(
+                                                      chapters[fallbackIndex],
+                                                      fallbackIndex);
+
+                                                  // Hiển thị thông báo
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                        content: Text(
+                                                            'Không tìm thấy chương $lastChapterKey, mở chương gần nhất')),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                          ),
+                                          const SizedBox(width: 20),
+                                          Button_Info(
+                                            text: "Chương",
+                                            backgroundColor: const Color(
+                                                0xFF0277BD), // Màu xanh dương đậm
+                                            foregroundColor: Colors.white,
+                                            flex: 2,
+                                            icon: Icons.format_list_bulleted,
+                                            ontap: () {
+                                              // Cuộn xuống phần danh sách chương
+                                              Scrollable.ensureVisible(
+                                                context,
+                                                duration: const Duration(
+                                                    milliseconds: 500),
+                                                curve: Curves.easeInOut,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                  }
+
+                                  // Default buttons when no reading progress
+                                  return Row(
+                                    children: [
+                                      Button_Info(
+                                        text: "Đọc ngay",
+                                        backgroundColor: const Color(
+                                            0xFF2E7D32), // Màu xanh lá đậm hơn
+                                        foregroundColor: Colors.white,
+                                        flex: 1,
+                                        icon: Icons.book,
+                                        ontap: () {
+                                          if (chapters.isNotEmpty) {
+                                            _navigateToChapter(
+                                                chapters.first, 0);
+                                          }
+                                        },
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Button_Info(
+                                        text: "Chương",
+                                        backgroundColor: const Color(
+                                            0xFF0277BD), // Màu xanh dương đậm
+                                        foregroundColor: Colors.white,
+                                        flex: 1,
+                                        icon: Icons.format_list_bulleted,
+                                        ontap: () {
+                                          // Cuộn xuống phần danh sách chương
+                                          Scrollable.ensureVisible(
+                                            context,
+                                            duration: const Duration(
+                                                milliseconds: 500),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              )
+                            : Row(
+                                children: [
+                                  Button_Info(
+                                    text: "Đọc ngay",
+                                    backgroundColor: const Color(
+                                        0xFF2E7D32), // Màu xanh lá đậm hơn
+                                    foregroundColor: Colors.white,
+                                    flex: 1,
+                                    icon: Icons.book,
+                                    ontap: () {
+                                      if (chapters.isNotEmpty) {
+                                        _navigateToChapter(chapters.first, 0);
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Button_Info(
+                                    text: "Chương",
+                                    backgroundColor: const Color(
+                                        0xFF0277BD), // Màu xanh dương đậm
+                                    foregroundColor: Colors.white,
+                                    flex: 1,
+                                    icon: Icons.format_list_bulleted,
+                                    ontap: () {
+                                      // Cuộn xuống phần danh sách chương
+                                      Scrollable.ensureVisible(
+                                        context,
+                                        duration:
+                                            const Duration(milliseconds: 500),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                      ),
+
+                      // Rating and Favorite widget
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: RateAllWidget(
+                          idBook: widget.story.slug,
+                          slug: widget.story.slug,
+                          title: widget.story.title,
+                          totalChapter: chapters.length,
                         ),
                       ),
 
-                      // Description
+                      // Description section
+                      // Padding(
+                      //   padding: const EdgeInsets.all(16.0),
+                      //   child: Column(
+                      //     crossAxisAlignment: CrossAxisAlignment.start,
+                      //     children: [
+                      //       const Text(
+                      //         'Giới thiệu',
+                      //         style: TextStyle(
+                      //           fontSize: 18,
+                      //           fontWeight: FontWeight.bold,
+                      //         ),
+                      //       ),
+                      //       const SizedBox(height: 8),
+                      //       Text(storyDescription),
+                      //     ],
+                      //   ),
+                      // ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
@@ -343,134 +672,236 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                                     },
                                   );
                                 },
-                                child: Text(
-                                  'Chi tiết',
-                                  style: TextStyle(color: Colors.green[300]),
-                                ),
+                                child: Text('Chi tiết'),
                               ),
                             )
                           ],
                         ),
                       ),
-                      RateAllWidget(
-                        idBook: widget.story.id,
-                        title: widget.story.title,
-                        slug: widget.story.slug,
-                      ),
-                      Divider(),
-                      // Chapters list
-                      // Danh sách chương dạng Grid
 
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Danh sách chương',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            if (chapters.isEmpty)
-                              const Center(child: Text('Không có chương nào'))
-                            else
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemCount: chapters.length,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  mainAxisSpacing: 6,
-                                  crossAxisSpacing: 6,
-                                  mainAxisExtent: 40, // chiều cao mỗi ô
-                                ),
-                                itemBuilder: (context, index) {
-                                  final chapter = chapters[index];
-                                  final chapterTitle = _getChapterTitle(
-                                      chapter); // ví dụ: 'Chương 1'
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      if (chapter.apiData.isNotEmpty) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ChapterPage(
-                                              storySlug: widget.story.slug,
-                                              chapterApiData: chapter.apiData,
-                                              chapterTitle:
-                                                  chapter.title.isNotEmpty
-                                                      ? chapter.title
-                                                      : chapter.name,
-                                              chapterNumber: _getChapterNumber(
-                                                  chapter.name),
-                                            ),
-                                          ),
-                                        );
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  'Không thể đọc chương này')),
-                                        );
-                                      }
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          chapterTitle,
-                                          style: TextStyle(fontSize: 13),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
+                      // Chapters section
+                      if (chapters.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Danh sách chương',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                  );
-                                },
+                                  ),
+                                  Text('${chapters.length} chương'),
+                                ],
                               ),
-                          ],
+                              const SizedBox(height: 8),
+
+                              // Hiển thị danh sách chương khác nhau cho truyện tranh và truyện chữ
+                              widget.story.isNovel
+                                  ? _buildNovelChaptersList()
+                                  : _buildComicChaptersList(),
+                            ],
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
     );
   }
 
-  // Helper method để tạo tiêu đề chương
-  String _getChapterTitle(Chapter chapter) {
-    final number = _getChapterNumber(chapter.name);
-    final title = chapter.title.isNotEmpty ? chapter.title : '';
+  // Hiển thị danh sách chương truyện chữ
+  Widget _buildNovelChaptersList() {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: readingProgressStream,
+      builder: (context, snapshot) {
+        // Khởi tạo map lưu tiến độ đọc
+        final Map<String, num> readingProgress = {};
 
-    if (number > 0) {
-      return title.isNotEmpty ? 'Chương $number: $title' : 'Chương $number';
-    } else {
-      return title.isNotEmpty ? title : chapter.name;
-    }
+        // Lấy dữ liệu từ Firebase nếu có
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          if (data.containsKey('chapters_reading') &&
+              data['chapters_reading'] is Map) {
+            // Chuyển đổi chapters_reading thành Map<String, num>
+            final chaptersReading =
+                data['chapters_reading'] as Map<String, dynamic>;
+            chaptersReading.forEach((key, value) {
+              // Lưu dạng: index -> phần trăm đọc (từ 0-100)
+              if (value is num) {
+                readingProgress[key] = value;
+              } else if (value is Map && value.containsKey('progress')) {
+                readingProgress[key] = value['progress'] ?? 0;
+              }
+            });
+          }
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: chapters.length,
+          itemBuilder: (context, index) {
+            final chapter = chapters[index];
+            // Tính toán phần trăm đã đọc (từ 0 đến 1)
+            double readPercentage = 0.0;
+            // Sửa lỗi: sử dụng (index + 1) để khớp với chapterNumber
+            final chapterIndex = (index + 1).toString();
+
+            if (readingProgress.containsKey(chapterIndex)) {
+              readPercentage = readingProgress[chapterIndex]! / 100.0;
+            }
+
+            return Card(
+              elevation: 2,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    // Phần đã đọc
+                    FractionallySizedBox(
+                      widthFactor: readPercentage,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        color: Colors.blue.withOpacity(0.2),
+                        height: 56, // Chiều cao của ListTile
+                      ),
+                    ),
+                    // ListTile hiển thị thông tin chương
+                    ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          chapter.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        chapter.title.isEmpty
+                            ? 'Chương ${chapter.name}'
+                            : chapter.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        _navigateToChapter(chapter, index);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
-  // Chuyển đổi tên chương thành số
-  int _getChapterNumber(String chapterName) {
-    // Giữ lại phần số từ tên chương (ví dụ: "10", "10.5")
-    final numberPattern = RegExp(r'^(\d+(\.\d+)?)');
-    final match = numberPattern.firstMatch(chapterName);
-    if (match != null && match.group(1) != null) {
-      try {
-        return double.parse(match.group(1)!).toInt();
-      } catch (e) {
-        return 0;
-      }
-    }
-    return 0;
+  // Hiển thị danh sách chương truyện tranh
+  Widget _buildComicChaptersList() {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: readingProgressStream,
+      builder: (context, snapshot) {
+        // Khởi tạo map lưu tiến độ đọc
+        final Map<String, num> readingProgress = {};
+
+        // Lấy dữ liệu từ Firebase nếu có
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          if (data.containsKey('chapters_reading') &&
+              data['chapters_reading'] is Map) {
+            // Chuyển đổi chapters_reading thành Map<String, num>
+            final chaptersReading =
+                data['chapters_reading'] as Map<String, dynamic>;
+            chaptersReading.forEach((key, value) {
+              // Lưu dạng: index -> phần trăm đọc (từ 0-100)
+              if (value is num) {
+                readingProgress[key] = value;
+              } else if (value is Map && value.containsKey('progress')) {
+                readingProgress[key] = value['progress'] ?? 0;
+              }
+            });
+          }
+        }
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 2.5,
+          ),
+          itemCount: chapters.length,
+          itemBuilder: (context, index) {
+            final chapter = chapters[index];
+            // Tính toán phần trăm đã đọc (từ 0 đến 1)
+            double readPercentage = 0.0;
+            // Sửa lỗi: sử dụng (index + 1) để khớp với chapterNumber
+            final chapterIndex = (index + 1).toString();
+
+            if (readingProgress.containsKey(chapterIndex)) {
+              readPercentage = readingProgress[chapterIndex]! / 100.0;
+            }
+
+            return InkWell(
+              onTap: () {
+                _navigateToChapter(chapter, index);
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    // Nền ban đầu
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        border:
+                            Border.all(color: Colors.green.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    // Phần đã đọc
+                    FractionallySizedBox(
+                      widthFactor: readPercentage,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        color: Colors.green.withOpacity(0.5),
+                      ),
+                    ),
+                    // Nội dung chương
+                    Center(
+                      child: Text(
+                        'Chương ${chapter.name}',
+                        style: const TextStyle(fontSize: 12),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

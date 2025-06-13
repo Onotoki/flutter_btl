@@ -22,12 +22,6 @@ class _InfoState extends State<Info> with SingleTickerProviderStateMixin {
     );
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _tabController.dispose();
-    super.dispose();
-  }
   void _scrollDown() {
     _tabController.animateTo(
       0,
@@ -41,12 +35,18 @@ class _InfoState extends State<Info> with SingleTickerProviderStateMixin {
       curve: Curves.easeInOut,
     );
   }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments as String?;
-    if (args == null) {
-      return Scaffold(body: Center(child: Text('Invalid book data')));
-    }
+
     return DefaultTabController(
       length: 2,
       child: SafeArea(
@@ -60,7 +60,7 @@ class _InfoState extends State<Info> with SingleTickerProviderStateMixin {
               // Tên truyện - Tóm tắt - Đánh giá - Bình luân.
               SlivertoboxadapterWidget(
                 scrollDown: _scrollDown,
-                linkImage: args,
+                linkImage: args ?? '',
               ),
 
               // Tabbar

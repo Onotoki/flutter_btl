@@ -5,15 +5,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class RatingSelector extends StatefulWidget {
-  String idBook;
-  double currentRate;
-  int countRate;
+  final String idBook;
+  final double currentRate;
+  final int countRate;
 
-  RatingSelector(
-      {super.key,
-      required this.idBook,
-      required this.currentRate,
-      required this.countRate});
+  const RatingSelector({
+    super.key,
+    required this.idBook,
+    required this.currentRate,
+    required this.countRate,
+  });
 
   @override
   State<RatingSelector> createState() => _RatingSelectorState();
@@ -23,22 +24,34 @@ class _RatingSelectorState extends State<RatingSelector> {
   int? selectedIndex;
   String? uid;
   bool isRate = false;
-  late Future<QuerySnapshot> checkUserRate;
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      uid = user.uid;
-    }
-    checkUserRate = FirebaseFirestore.instance
+  Future<void> checkUserRate(String uid) async {
+    print('Kiểm tra đánh giá người dùng');
+    final documentSnapshot = await FirebaseFirestore.instance
         .collection('books')
         .doc(widget.idBook)
         .collection('rate')
         .where('user_id', isEqualTo: uid)
         .get();
+    if (documentSnapshot.docs.isNotEmpty) {
+      isRate = true;
+      final data = documentSnapshot.docs.first.data() as Map;
+      setState(() {
+        selectedIndex = data['user_rate'];
+      });
+    } else {
+      print('Người dùng chưa đánh giá truyện này');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      uid = user.uid;
+      checkUserRate(uid!);
+    }
   }
 
   final List<Map<String, dynamic>> items = [
@@ -79,6 +92,7 @@ class _RatingSelectorState extends State<RatingSelector> {
     required String bookID,
     required double oldTotal,
     required int newRating,
+    required int indexRate,
     required int oldCount,
   }) async {
     await FirebaseFirestore.instance
@@ -88,7 +102,7 @@ class _RatingSelectorState extends State<RatingSelector> {
         .add(
       {
         'user_id': userID,
-        'user_rate': newRating,
+        'user_rate': indexRate,
       },
     );
     final newCount = oldCount + 1;
@@ -97,56 +111,40 @@ class _RatingSelectorState extends State<RatingSelector> {
         .collection('books')
         .doc(bookID)
         .set({'rate': newPoint, 'count': newCount});
+
+    print('Đã lưu đánh giá: $newRating điểm, điểm trung bình mới: $newPoint');
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        FutureBuilder(
-          future: checkUserRate,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Text("Something went wrong");
-            }
-
-            if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-              // Map<String, dynamic> data = snapshot.data!.docs.first.data();
-              final data =
-                  snapshot.data!.docs.first.data() as Map<String, dynamic>;
-              selectedIndex = data['user_rate'];
-              isRate = true;
-            }
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Expanded(
-                child: Row(
-                  children: List.generate(
-                    items.length,
-                    (index) {
-                      final item = items[index];
-                      return RateWidget(
-                        isSelected: (selectedIndex == index) ||
-                            (isRate && selectedIndex == index),
-                        onTap: () {
-                          if (!isRate) {
-                            setState(() {
-                              selectedIndex = index;
-                            });
-                          }
-                        },
-                        imageIcon: item['icon'],
-                        textIcon: item['text'],
-                        activeColor: item['color'],
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(
+              items.length,
+              (index) {
+                final item = items[index];
+                return RateWidget(
+                  isSelected: ((selectedIndex == index) ||
+                      (isRate && selectedIndex == index)),
+                  onTap: () {
+                    if (!isRate) {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                    }
+                  },
+                  imageIcon: item['icon'],
+                  textIcon: item['text'],
+                  activeColor: item['color'],
+                );
+              },
+            ),
+          ),
         ),
-        SizedBox(
+        const SizedBox(
           height: 30,
         ),
         Row(
@@ -157,12 +155,13 @@ class _RatingSelectorState extends State<RatingSelector> {
               foregroundColor: Colors.white,
               flex: 1,
               ontap: () {
-                if (selectedIndex != null && uid != null) {
+                if (selectedIndex != null && uid != null && isRate == false) {
                   final itemIcon = items[selectedIndex!];
                   _rate(
                     userID: uid!,
                     bookID: widget.idBook,
                     newRating: itemIcon['point'],
+                    indexRate: selectedIndex!,
                     oldTotal: widget.currentRate,
                     oldCount: widget.countRate,
                   );
@@ -173,6 +172,15 @@ class _RatingSelectorState extends State<RatingSelector> {
                     builder: (context) {
                       return AlertDialog(
                         content: Text('Vui lòng đăng nhập'),
+                      );
+                    },
+                  );
+                } else if (isRate) {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        content: Text('Bạn đã đánh giá truyện này rồi'),
                       );
                     },
                   );

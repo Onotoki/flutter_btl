@@ -31,10 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_core: ^3.13.0
-  cached_network_image: ^3.4.1
   firebase_auth: ^5.5.3
-  image_picker: ^1.1.2
-  firebase_storage: ^12.4.5
   cloud_firestore: ^5.6.7
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.1.1
@@ -42,9 +39,23 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   flutterfire_cli: ^1.2.0
   flutter_bloc: ^9.1.0
+  bloc: ^9.0.0
   shared_preferences: ^2.5.3
   http: ^1.2.0
   emailjs: ^4.0.0
+  uuid: ^4.4.0
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.4.2
+  flutter_tts: ^4.0.2
+  # Thêm dependencies từ flutter_tin
+  cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+  firebase_storage: ^12.4.5
+  sqflite: ^2.0.2+3
+  path_provider: ^2.0.11
+  quiver: ^3.2.2
+  cupertino_icons: ^1.0.8
+
 flutter_icons:
   android: true
   ios: true

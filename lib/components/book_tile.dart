@@ -1,11 +1,9 @@
-
 import 'package:btl/pages/info_book.dart';
 import 'package:flutter/material.dart';
 
 class BookTile extends StatelessWidget {
-  final String linkImage;
-
-  const BookTile({super.key, required this.linkImage});
+  String linkImage;
+  BookTile({super.key, required this.linkImage});
 
   @override
   Widget build(BuildContext context) {
@@ -13,17 +11,8 @@ class BookTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10, left: 15),
       child: GestureDetector(
         onTap: () {
-          try {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => Info(),
-                    settings: RouteSettings(arguments: linkImage)));
-          } catch (e) {
-            debugPrint('Navigation error: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Cannot open book: ${e.toString()}')));
-          }
+          print('bạn vừa nhân getsture');
+          Navigator.of(context).pushNamed('/infopage', arguments: linkImage);
         },
         child: Container(
           width: 120,
@@ -32,8 +21,8 @@ class BookTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
             child: Image.asset(linkImage, fit: BoxFit.cover),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
