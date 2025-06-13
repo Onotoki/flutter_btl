@@ -28,14 +28,18 @@ class ContentFilter {
   // Danh sách thể loại dành cho truyện chữ
   static final List<String> textNovelCategories = [
     'tiểu thuyết',
+    'tiếu lâm',
+    'cổ tích',
+    'phiêu lưu, mạo hiểm',
+    'trinh thám, hình sự',
+    'kiếm hiệp',
     // 'novel',
     // 'văn học',
     // 'truyện chữ',
     // 'ebook',
     // 'light novel',
-    // 'trinh thám',
     // 'huyền huyễn',
-    // 'kiếm hiệp',
+    
     // 'truyện ngắn',
     // 'tâm lý',
     // 'lịch sử',

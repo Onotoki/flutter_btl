@@ -33,7 +33,7 @@ class StoryTile extends StatelessWidget {
 
     return SizedBox(
       // Đảm bảo StoryTile luôn có chiều rộng cố định
-      width: 120,
+      width: 100,
       child: GestureDetector(
         onTap: () {
           // Bọc onTap trong try-catch để tránh lỗi khi gọi hàm callback

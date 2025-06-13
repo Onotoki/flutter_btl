@@ -84,20 +84,29 @@ class CategoriesCubit extends CacheableCubit<List<Category>> {
         for (var item in cachedData) {
           if (item is Map<String, dynamic>) {
             try {
-              categories.add(Category(
+              final category = Category(
                 id: item['id'] ?? '',
                 name: item['name'] ?? '',
                 description: item['description'] ?? '',
                 stories: item['stories'] ?? 0,
                 slug: item['slug'] ?? '',
-              ));
+              );
+
+              // Áp dụng filter cho dữ liệu cache giống như dữ liệu từ API
+              if (!ContentFilter.isAdultCategory(category.name)) {
+                categories.add(category);
+              } else {
+                print(
+                    'Đã lọc bỏ thể loại người lớn từ cache: ${category.name}');
+              }
             } catch (e) {
               print('Lỗi khi phân tích thể loại từ cache: $e');
             }
           }
         }
 
-        print('Đã khôi phục thành công ${categories.length} thể loại từ cache');
+        print(
+            'Đã khôi phục thành công ${categories.length} thể loại từ cache sau khi lọc');
         return categories;
       }
     } catch (e) {

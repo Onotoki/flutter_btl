@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class OTruyenApi {
   // Url API - Đảm bảo rằng đúng IP địa chỉ máy chủ
   static const String baseUrl = 'https://flutter.bug.io.vn/v1/api';
-  // static const String baseUrl = 'http://192.168.1.190:5000/v1/api';
+  // static const String baseUrl = 'http://192.168.48.186:5000/v1/api';
   // Backup URL nếu cần thiết
   // static const String baseUrl = 'http://localhost:5000/v1/api';
 
