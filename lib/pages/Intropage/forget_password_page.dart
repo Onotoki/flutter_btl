@@ -14,6 +14,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
 
   void resetPassword() async {
     try {
+      //Gọi Firebase Auth API sendPasswordResetEmail() với email đã nhập
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: emailController.text.trim(),
       );
@@ -58,7 +59,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                     controller: emailController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Enter your email',
+                      hintText: 'Nhập email của bạn',
                       hintStyle: const TextStyle(color: Colors.white70),
                       prefixIcon: const Icon(Icons.email, color: Colors.white),
                       filled: true,

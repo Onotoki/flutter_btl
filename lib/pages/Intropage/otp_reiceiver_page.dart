@@ -23,16 +23,18 @@ class OtpReceiverPage extends StatefulWidget {
 }
 
 class _OtpReceiverPageState extends State<OtpReceiverPage> {
+  // Controller để lấy giá trị OTP từ TextField
   final TextEditingController otpController = TextEditingController();
   bool _isLoading = false;
-
+  // Biến để kiểm tra trạng thái đăng ký
   Future<void> _verifyOtpAndRegister() async {
     setState(() => _isLoading = true);
 
     final enteredOtp = otpController.text.trim();
-
+    // Kiểm tra xem người dùng đã nhập mã OTP hay chưa
     if (enteredOtp != widget.generatedOtp) {
       setState(() => _isLoading = false);
+      // Hiển thị thông báo lỗi nếu mã OTP không đúng
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Mã OTP không đúng. Vui lòng thử lại.'),

@@ -24,13 +24,16 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
   final TextEditingController nicknameController = TextEditingController();
 
+  // Biến lưu mã OTP được tạo
   String? generatedOtp;
 
+  // Kiểm tra định dạng email hợp lệ
   bool isValidEmail(String email) {
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
   }
 
+  // Gửi email chứa mã OTP
   Future<void> sendOtpEmail(String email, String otp) async {
     const url = 'https://api.emailjs.com/api/v1.0/email/send';
 
@@ -74,7 +77,7 @@ class _RegisterPageState extends State<RegisterPage> {
         .where('nickname', isEqualTo: nickname)
         .get()
         .then((snapshot) => snapshot.docs.isEmpty);
-
+    // Kiểm tra nickname đã được sử dụng hay chưa
     if (!isAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -84,7 +87,6 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
-
     final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
     if (methods.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,11 +97,11 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
-
+    // Tạo mã OTP ngẫu nhiên
     generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
         .toString();
     await sendOtpEmail(email, generatedOtp!);
-    
+    // Hiển thị thông báo gửi OTP thành công và chuyển sang trang nhập OTP
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -238,6 +240,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // Hàm xây dựng trường nhập liệu
   Widget buildInputField({
     required String label,
     required TextEditingController controller,

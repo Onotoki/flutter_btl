@@ -10,13 +10,14 @@ class AdminStoryPage extends StatefulWidget {
 }
 
 class _AdminStoryPageState extends State<AdminStoryPage>
+    // AutomaticKeepAliveClientMixin giúp giữ trạng thái của widget khi chuyển đổi giữa các tab
     with AutomaticKeepAliveClientMixin {
   final CollectionReference users =
       FirebaseFirestore.instance.collection('users');
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool isLoading = false;
   final int limit = 10;
-  DocumentSnapshot? lastDocument;
+  DocumentSnapshot? lastDocument; // Lưu tài liệu cuối cùng để phân trang
   bool hasMore = true;
 
   // Danh sách các auth provider phổ biến
@@ -29,13 +30,13 @@ class _AdminStoryPageState extends State<AdminStoryPage>
   Future<List<QueryDocumentSnapshot>> getUsers() async {
     try {
       Query query = users.orderBy('createdAt', descending: true).limit(limit);
-
+      // Nếu có tài liệu cuối cùng, sử dụng startAfterDocument để phân trang
       if (lastDocument != null) {
         query = query.startAfterDocument(lastDocument!);
       }
-
+      // Thực hiện truy vấn để lấy dữ liệu
       final snapshot = await query.get();
-
+      // Kiểm tra xem có dữ liệu hay không
       if (snapshot.docs.length < limit) {
         hasMore = false;
       } else {
