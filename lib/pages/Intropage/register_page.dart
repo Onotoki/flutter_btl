@@ -18,6 +18,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
+  
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -110,8 +111,68 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       );
+
+      if (response.statusCode == 200) {
+        print('OTP sent successfully!');
+      } else {
+        print('Failed to send OTP: ${response.body}');
+      }
+    } catch (e) {
+      print('Error sending OTP: $e');
     }
   }
+
+  //
+  Future<void> handleRegister() async {
+  if (_formKey.currentState!.validate()) {
+    final email = emailController.text.trim();
+    final nickname = nicknameController.text.trim();
+    
+    // Kiểm tra nickname có sẵn
+    final isAvailable = await FirebaseFirestore.instance
+        .collection('users')
+        .where('nickname', isEqualTo: nickname)
+        .get()
+        .then((snapshot) => snapshot.docs.isEmpty);
+
+    if (!isAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nickname already taken. Please choose another.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+    if (methods.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email already registered. Please log in.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
+        .toString();
+    await sendOtpEmail(email, generatedOtp!);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtpReceiverPage(
+          email: email,
+          generatedOtp: generatedOtp!,
+          password: passwordController.text.trim(),
+          nickname: nickname,
+        ),
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {

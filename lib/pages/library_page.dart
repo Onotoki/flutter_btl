@@ -8,6 +8,7 @@ import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/pages/story_detail_page.dart';
 import 'package:flutter/services.dart';
+import 'package:btl/pages/categories_page.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -108,5 +109,54 @@ class _LibraryPageState extends State<LibraryPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildHorizontalStoryList(List<Story> stories) {
+    return SizedBox(
+      height: 220,
+      child: stories.isEmpty
+          ? const Center(child: Text('Chưa có chuyện nào'))
+          : ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: stories.length,
+              itemBuilder: (context, index) {
+                return StoryTile(
+                  story: stories[index],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            StoryDetailPage(story: stories[index]),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _errorMessage.isNotEmpty
+            ? Center(child: Text(_errorMessage))
+            : Scaffold(
+                body: SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        for (var category in _categories.entries) ...[
+                          _buildSectionTitle(
+                              context, category.key, category.value),
+                          _buildHorizontalStoryList(category.value),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
   }
 }

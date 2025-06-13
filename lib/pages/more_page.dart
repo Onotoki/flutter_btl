@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/search_page.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io'; // Thêm import này để sử dụng File
+import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/components/info_book_widgets.dart/reading_books.dart';
 import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';

@@ -185,35 +185,17 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
                   backgroundColor: Colors.greenAccent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                      borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.black)
                     : const Text(
-                        "Xác thực",
+                        "Verify",
                         style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
                       ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Gửi lại mã",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
               ),
             ),
             const Spacer(),
