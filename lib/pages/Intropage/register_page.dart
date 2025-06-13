@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/Intropage/otp_reiceiver_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,6 +17,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
+  
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -29,7 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return emailRegex.hasMatch(email);
   }
 
-  Future<bool> sendOtpEmail(String email, String otp) async {
+  Future<void> sendOtpEmail(String email, String otp) async {
     const url = 'https://api.emailjs.com/api/v1.0/email/send';
 
     try {
@@ -51,90 +53,73 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (response.statusCode == 200) {
-        print('OTP đã gửi thành công!');
-        return true;
+        print('OTP sent successfully!');
       } else {
-        print('Gửi OTP thất bại: ${response.body}');
-        return false;
+        print('Failed to send OTP: ${response.body}');
       }
     } catch (e) {
-      print('Lỗi gửi OTP: $e');
-      return false;
+      print('Error sending OTP: $e');
     }
   }
 
+  //
   Future<void> handleRegister() async {
-    if (_formKey.currentState!.validate()) {
-      final email = emailController.text.trim();
-      final nickname = nicknameController.text.trim();
-      final password = passwordController.text.trim();
+  if (_formKey.currentState!.validate()) {
+    final email = emailController.text.trim();
+    final nickname = nicknameController.text.trim();
+    
+    // Kiểm tra nickname có sẵn
+    final isAvailable = await FirebaseFirestore.instance
+        .collection('users')
+        .where('nickname', isEqualTo: nickname)
+        .get()
+        .then((snapshot) => snapshot.docs.isEmpty);
 
-      // Kiểm tra nickname đã tồn tại
-      final isNicknameAvailable = await FirebaseFirestore.instance
-          .collection('users')
-          .where('nickname', isEqualTo: nickname)
-          .get()
-          .then((snapshot) => snapshot.docs.isEmpty);
-
-      if (!isNicknameAvailable) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Nickname đã được sử dụng. Vui lòng chọn tên khác.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-        return;
-      }
-
-      // Kiểm tra email đã tồn tại
-      final methods =
-          await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-      if (methods.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email đã được đăng ký. Vui lòng đăng nhập.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-        return;
-      }
-
-      // Tạo OTP
-      generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
-          .toString();
-
-      // Gửi OTP
-      final otpSent = await sendOtpEmail(email, generatedOtp!);
-
-      if (otpSent) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OtpReceiverPage(
-              email: email,
-              generatedOtp: generatedOtp!,
-              password: password,
-              nickname: nickname,
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không thể gửi mã OTP. Vui lòng thử lại sau.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+    if (!isAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nickname already taken. Please choose another.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
     }
+
+    final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+    if (methods.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email already registered. Please log in.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
+        .toString();
+    await sendOtpEmail(email, generatedOtp!);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtpReceiverPage(
+          email: email,
+          generatedOtp: generatedOtp!,
+          password: passwordController.text.trim(),
+          nickname: nickname,
+        ),
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF003E32),
       appBar: AppBar(
-        title: const Text("Đăng ký", style: TextStyle(color: Colors.white)),
+        title: const Text("Register", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         automaticallyImplyLeading: false,
@@ -159,7 +144,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const Icon(Icons.grid_view, size: 60, color: Colors.greenAccent),
               const SizedBox(height: 10),
               const Text(
-                "Đăng ký miễn phí",
+                "Sign Up For Free",
                 style: TextStyle(
                   color: Colors.greenAccent,
                   fontSize: 26,
@@ -167,7 +152,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
               // Nickname
               buildInputField(
                 label: "Nickname",
@@ -175,7 +159,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: false,
                 validator: (value) {
                   if (value == null || value.isEmpty)
-                    return "Vui lòng nhập nickname";
+                    return "Please enter nickname";
                   return null;
                 },
               ),
@@ -188,8 +172,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: false,
                 validator: (value) {
                   if (value == null || value.isEmpty)
-                    return "Vui lòng nhập email";
-                  if (!isValidEmail(value)) return "Email không hợp lệ";
+                    return "Please enter email";
+                  if (!isValidEmail(value)) return "Invalid email";
                   return null;
                 },
               ),
@@ -197,13 +181,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // Password
               buildInputField(
-                label: "Mật khẩu",
+                label: "Password",
                 controller: passwordController,
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty)
-                    return "Vui lòng nhập mật khẩu";
-                  if (value.length < 6) return "Mật khẩu tối thiểu 6 ký tự";
+                    return "Please enter password";
+                  if (value.length < 6) return "Password minimum 6 characters";
                   return null;
                 },
               ),
@@ -211,14 +195,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
               // Confirm password
               buildInputField(
-                label: "Xác nhận mật khẩu",
+                label: "Password Confirmation",
                 controller: confirmPasswordController,
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty)
-                    return "Vui lòng xác nhận mật khẩu";
+                    return "Please confirm password";
                   if (value != passwordController.text)
-                    return "Mật khẩu xác nhận không khớp";
+                    return "Confirm password does not match";
                   return null;
                 },
               ),
@@ -237,7 +221,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   child: const Text(
-                    "Đăng ký",
+                    "Sign Up",
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.black87,
