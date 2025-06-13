@@ -74,6 +74,7 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
         'email': widget.email,
         'nickname': widget.nickname,
         'createdAt': FieldValue.serverTimestamp(),
+        'password': widget.password,
         'authProvider': 'email',
       });
 

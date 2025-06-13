@@ -1,6 +1,13 @@
+import 'package:btl/components/info_book_widgets.dart/button_info.dart';
 import 'package:btl/pages/libary_tab.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:btl/api/otruyen_api.dart';
+import 'package:btl/components/story_tile.dart';
+import 'package:btl/models/story.dart';
+import 'package:btl/pages/story_detail_page.dart';
+import 'package:flutter/services.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -10,19 +17,27 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  List<Map<String, dynamic>> listBooksReading = [];
+  List<Map<String, dynamic>> listBooksFavorite = [];
+  Widget? listReading;
+  Widget? listFavorite;
+  bool _isLoading = true;
   String? uid;
 
   @override
   void initState() {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      uid = user.uid;
+    if (user == null) {
+      return;
     }
+    uid = user.uid;
+    _isLoading = false;
   }
 
   @override
   Widget build(BuildContext context) {
+    // Kiểm tra đăng nhập
     if (uid == null) {
       return const Scaffold(
         body: Center(
@@ -61,8 +76,8 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                   labelColor: Colors.white,
                   tabs: [
-                    _tabItem(title: 'Đang đọc'),
-                    _tabItem(title: 'Yêu thích'),
+                    TabItem(title: 'Đang đọc'),
+                    TabItem(title: 'Yêu thích'),
                   ],
                 ),
               ),
@@ -80,7 +95,7 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
-  Widget _tabItem({required String title}) {
+  Widget TabItem({required String title}) {
     return Tab(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

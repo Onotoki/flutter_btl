@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:btl/cubit/home_cubit.dart';
-import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/utils/back_to_intro_page.dart';
