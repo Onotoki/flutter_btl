@@ -1,11 +1,9 @@
 import 'dart:convert';
-
 import 'package:btl/pages/Intropage/intro_page.dart';
 import 'package:btl/pages/Intropage/otp_reiceiver_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:emailjs/emailjs.dart';
 import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatefulWidget {
@@ -18,7 +16,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
-  
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -32,7 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return emailRegex.hasMatch(email);
   }
 
-  Future<void> sendOtpEmail(String email, String otp) async {
+  Future<bool> sendOtpEmail(String email, String otp) async {
     const url = 'https://api.emailjs.com/api/v1.0/email/send';
 
     try {
@@ -55,11 +52,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (response.statusCode == 200) {
         print('OTP đã gửi thành công!');
+        return true;
       } else {
         print('Gửi OTP thất bại: ${response.body}');
+        return false;
       }
     } catch (e) {
       print('Lỗi gửi OTP: $e');
+      return false;
     }
   }
 
@@ -67,15 +67,16 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       final email = emailController.text.trim();
       final nickname = nicknameController.text.trim();
+      final password = passwordController.text.trim();
 
-      // Kiểm tra nickname có sẵn
-      final isAvailable = await FirebaseFirestore.instance
+      // Kiểm tra nickname đã tồn tại
+      final isNicknameAvailable = await FirebaseFirestore.instance
           .collection('users')
           .where('nickname', isEqualTo: nickname)
           .get()
           .then((snapshot) => snapshot.docs.isEmpty);
 
-      if (!isAvailable) {
+      if (!isNicknameAvailable) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Nickname đã được sử dụng. Vui lòng chọn tên khác.'),
@@ -85,6 +86,7 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
+      // Kiểm tra email đã tồn tại
       final methods =
           await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
       if (methods.isNotEmpty) {
@@ -96,83 +98,36 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         return;
       }
+
+      // Tạo OTP
       generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
           .toString();
-      await sendOtpEmail(email, generatedOtp!);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtpReceiverPage(
-            email: email,
-            generatedOtp: generatedOtp!,
-            password: passwordController.text.trim(),
-            nickname: nickname,
+      // Gửi OTP
+      final otpSent = await sendOtpEmail(email, generatedOtp!);
+
+      if (otpSent) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpReceiverPage(
+              email: email,
+              generatedOtp: generatedOtp!,
+              password: password,
+              nickname: nickname,
+            ),
           ),
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        print('OTP sent successfully!');
+        );
       } else {
-        print('Failed to send OTP: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể gửi mã OTP. Vui lòng thử lại sau.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
-    } catch (e) {
-      print('Error sending OTP: $e');
     }
   }
-
-  //
-  Future<void> handleRegister() async {
-  if (_formKey.currentState!.validate()) {
-    final email = emailController.text.trim();
-    final nickname = nicknameController.text.trim();
-    
-    // Kiểm tra nickname có sẵn
-    final isAvailable = await FirebaseFirestore.instance
-        .collection('users')
-        .where('nickname', isEqualTo: nickname)
-        .get()
-        .then((snapshot) => snapshot.docs.isEmpty);
-
-    if (!isAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nickname already taken. Please choose another.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-    if (methods.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email already registered. Please log in.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    generatedOtp = (100000 + (DateTime.now().millisecondsSinceEpoch % 900000))
-        .toString();
-    await sendOtpEmail(email, generatedOtp!);
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OtpReceiverPage(
-          email: email,
-          generatedOtp: generatedOtp!,
-          password: passwordController.text.trim(),
-          nickname: nickname,
-        ),
-      ),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +167,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 40),
+
               // Nickname
               buildInputField(
                 label: "Nickname",
