@@ -251,6 +251,7 @@ class _CommentState extends State<Comment> {
   }
 }
 
+// hàm kéo comment về
 class CommentWidget extends StatefulWidget {
   final String idBook;
   final QueryDocumentSnapshot comment;

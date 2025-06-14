@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:btl/models/story.dart';
 
@@ -82,6 +83,18 @@ class StoryTile extends StatelessWidget {
                           );
                         },
                       ),
+                      // child: CachedNetworkImage(
+                      //   imageUrl: thumbnailUrl,
+                      //   fit: BoxFit.cover,
+                      //   errorWidget: (context, error, stackTrace) {
+                      //     return Container(
+                      //       color: Colors.grey[300],
+                      //       child: const Center(
+                      //         child: Icon(Icons.broken_image),
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
                     ),
                   ),
                   // Biểu tượng góc phải trên cho loại truyện

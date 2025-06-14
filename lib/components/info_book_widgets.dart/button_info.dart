@@ -51,7 +51,11 @@ class Button_Info extends StatelessWidget {
               if (icon != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0),
-                  child: Icon(icon, size: 20),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
               Text(
                 text,

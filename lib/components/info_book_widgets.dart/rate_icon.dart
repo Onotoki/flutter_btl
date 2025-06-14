@@ -34,7 +34,7 @@ class RateWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ClipRect(
+            ClipRRect(
               child: ColorFiltered(
                 colorFilter: ColorFilter.mode(color, BlendMode.saturation),
                 child: Image.asset(

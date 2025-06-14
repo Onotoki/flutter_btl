@@ -1,12 +1,12 @@
 import 'package:btl/components/info_book_widgets.dart/button_info.dart';
-import 'package:btl/pages/libary_tab.dart';
+import 'package:btl/models/pages/libary_tab.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
-import 'package:btl/pages/story_detail_page.dart';
+import 'package:btl/models/pages/story_detail_page.dart';
 import 'package:flutter/services.dart';
 
 class LibraryPage extends StatefulWidget {

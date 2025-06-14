@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/components/story_tile.dart';
 import 'package:btl/models/story.dart';
-import 'package:btl/pages/story_detail_page.dart';
+import 'package:btl/models/pages/story_detail_page.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
@@ -154,29 +154,28 @@ class _LibraryTabState extends State<LibraryTab>
           return const Text('Không có sách để hiển thị');
         }
 
-        return Expanded(
-          child: AnimationLimiter(
-            child: GridView.count(
-              mainAxisSpacing: 2,
-              crossAxisSpacing: 3,
-              childAspectRatio: 0.6,
-              crossAxisCount: 3,
-              children: List.generate(
-                listBooks.length,
-                (int index) {
-                  return AnimationConfiguration.staggeredGrid(
-                    position: index,
-                    duration: const Duration(milliseconds: 375),
-                    columnCount: 3,
-                    child: ScaleAnimation(
-                      child: FadeInAnimation(
-                        child: _buildBookFutureBuilder(
-                            listBooks[index], widget.category),
-                      ),
+        return AnimationLimiter(
+          child: GridView.count(
+            mainAxisSpacing: 2,
+            crossAxisSpacing: 3,
+            childAspectRatio: 0.6,
+            crossAxisCount: 3,
+            children: List.generate(
+              listBooks.length,
+              (index) {
+                return AnimationConfiguration.staggeredGrid(
+                  position: index,
+                  duration: const Duration(milliseconds: 800),
+                  columnCount: 3,
+                  child: SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(
+                      child: _buildBookFutureBuilder(
+                          listBooks[index], widget.category),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
         );
