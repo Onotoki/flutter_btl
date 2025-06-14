@@ -1,5 +1,5 @@
-import 'package:btl/pages/categories_page.dart';
-import 'package:btl/pages/library_page.dart';
+import 'package:btl/models/pages/categories_page.dart';
+import 'package:btl/models/pages/library_page.dart';
 import 'package:flutter/material.dart';
 
 import 'book_page.dart';

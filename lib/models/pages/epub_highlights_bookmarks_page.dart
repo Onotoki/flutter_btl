@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/epub_highlight.dart';
-import '../models/epub_bookmark.dart';
-import '../services/epub_reading_service.dart';
+import '../epub_highlight.dart';
+import '../epub_bookmark.dart';
+import '../../services/epub_reading_service.dart';
 
 /// Trang hiển thị danh sách highlights (đoạn văn bản được tô sáng) và bookmarks (dấu trang) của sách EPUB
 /// Cho phép người dùng xem, chỉnh sửa ghi chú và xóa các highlights/bookmarks đã lưu

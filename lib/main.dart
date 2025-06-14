@@ -2,14 +2,17 @@ import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';
 import 'package:btl/cubit/home_cubit.dart';
 import 'package:btl/cubit/categories_cubit.dart';
-import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/info_book.dart';
-import 'package:btl/pages/search_page.dart';
-import 'package:btl/pages/categories_page.dart';
+import 'package:btl/models/pages/Intropage/intro_page.dart';
+import 'package:btl/models/pages/home_page.dart';
+import 'package:btl/models/pages/info_book.dart';
+import 'package:btl/models/pages/search_page.dart';
+import 'package:btl/models/pages/categories_page.dart';
 import 'package:btl/theme/dark_theme.dart';
 import 'package:btl/theme/light_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
@@ -39,15 +42,24 @@ class AppRoot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        // statusBarColor: Colors.red, // Or your desired color
+        statusBarIconBrightness: Brightness.dark, // Or Brightness.light
+      ),
+    );
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, state) {
         final mode = state is LightTheme ? ThemeMode.light : ThemeMode.dark;
+
         return MaterialApp(
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: mode,
           debugShowCheckedModeBanner: false,
-          home: IntroPage(),
+          home: FirebaseAuth.instance.currentUser != null
+              ? HomePage()
+              : IntroPage(),
           routes: {
             '/infopage': (context) => Info(),
             '/search': (context) => const SearchPage(),

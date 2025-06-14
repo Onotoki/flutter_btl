@@ -1,7 +1,7 @@
-import 'package:btl/pages/Intropage/forget_password_page.dart';
-import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/admin/admin_story_page.dart';
-import 'package:btl/pages/home_page.dart';
+import 'package:btl/models/pages/Intropage/forget_password_page.dart';
+import 'package:btl/models/pages/Intropage/intro_page.dart';
+import 'package:btl/models/pages/admin/admin_story_page.dart';
+import 'package:btl/models/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -15,33 +15,49 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
+  // Quản lý các TextEditingController
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF003E32),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close, size: 30, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => IntroPage()),
-              ); // quay lại hoặc thoát
-            },
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.transparent,
+      //   automaticallyImplyLeading: false,
+      //   elevation: 0,
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.close, size: 30, color: Colors.white),
+      //       onPressed: () {
+      //         Navigator.push(
+      //           context,
+      //           MaterialPageRoute(builder: (context) => IntroPage()),
+      //         ); // quay lại hoặc thoát
+      //       },
+      //     ),
+      //   ],
+      // ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, size: 30, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const IntroPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
             const Spacer(),
 
             const Text(
@@ -88,11 +104,11 @@ class LoginPageState extends State<LoginPage> {
             const SizedBox(height: 30),
 
             // Nút Login
-            // Nút Login
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
+                  //Xử lý đăng nhập
                   try {
                     final userCredential =
                         await FirebaseAuth.instance.signInWithEmailAndPassword(

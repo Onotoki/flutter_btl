@@ -3,7 +3,7 @@ import 'package:btl/api/otruyen_api.dart';
 import 'package:btl/models/story.dart';
 import 'package:btl/models/category.dart';
 import 'package:btl/components/story_tile.dart';
-import 'package:btl/pages/story_detail_page.dart';
+import 'package:btl/models/pages/story_detail_page.dart';
 import 'package:btl/utils/content_filter.dart';
 
 class SearchPage extends StatefulWidget {
@@ -217,12 +217,13 @@ class _SearchPageState extends State<SearchPage> {
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            // color: Colors.white,
+            color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(8),
           ),
           child: TextField(
             controller: _searchController,
-            style: const TextStyle(color: Colors.black),
+            // style: const TextStyle(color: Colors.black),
             decoration: const InputDecoration(
               hintText: "Tìm kiếm truyện...",
               hintStyle: TextStyle(color: Colors.grey),

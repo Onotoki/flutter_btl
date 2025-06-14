@@ -1,9 +1,13 @@
-import 'package:btl/pages/Intropage/register_page.dart';
-import 'package:btl/pages/home_page.dart';
+import 'package:btl/cubit/theme_cubit.dart';
+import 'package:btl/cubit/theme_state.dart';
+import 'package:btl/models/pages/Intropage/register_page.dart';
+import 'package:btl/models/pages/home_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'login_page.dart';
 
@@ -11,20 +15,20 @@ class IntroPage extends StatelessWidget {
   const IntroPage({super.key});
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
+      // Khởi tạo Google Sign-In và đăng xuất phiên trước đó
       final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
       await googleSignIn.signOut();
+      // Yêu cầu người dùng chọn tài khoản Google
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
       if (googleUser == null) return;
-
+      // Lấy thông tin xác thực
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
+      // Đăng nhập với Firebase
       final UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
 
@@ -177,7 +181,7 @@ class IntroPage extends StatelessWidget {
         }
       }
 
-      // Đăng nhập thành công
+      // Hiển thị thông báo đăng nhập thành công
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Đăng nhập thành công!'),
@@ -186,6 +190,7 @@ class IntroPage extends StatelessWidget {
         ),
       );
 
+      // Chuyển hướng đến trang HomePage
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
@@ -203,158 +208,184 @@ class IntroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // SystemChrome.setSystemUIOverlayStyle(
+    //   SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+    // );
     return Scaffold(
       backgroundColor: const Color(0xFF003E32),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close, size: 30, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
-              ); // quay lại hoặc thoát
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 25.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Spacer(),
-            const Icon(Icons.grid_view, size: 60, color: Colors.greenAccent),
-            const SizedBox(height: 20),
-            const Text(
-              "Đăng nhập vào Apptruyen",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      // backgroundColor: Colors.blue,
+      // appBar: AppBar(
+      //   // backgroundColor: Colors.blue,
+      //   automaticallyImplyLeading: false,
+      //   elevation: 0,
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.close, size: 30, color: Colors.white),
+      //       onPressed: () {
+      //         Navigator.push(
+      //           context,
+      //           MaterialPageRoute(builder: (context) => const HomePage()),
+      //         ).whenComplete(() => Future.delayed(Duration(seconds: 2)).then(
+      //               (_) => _updateAppbar(),
+      //             )); // quay lại hoặc thoát
+      //       },
+      //     ),
+      //   ],
+      // ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon:
+                        const Icon(Icons.close, size: 30, color: Colors.white),
+                    onPressed: () {
+                      final mode = context.read<ThemeCubit>().state;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const HomePage()),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Tạo tài khoản hoặc đăng nhập để lưu tiến trình đọc truyện.",
-              style: TextStyle(fontSize: 16, color: Colors.white70),
-            ),
-            const SizedBox(height: 30),
-            // Google button
-            GestureDetector(
-              onTap: () => signInWithGoogle(context),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
+              const Spacer(),
+
+              const Icon(Icons.grid_view, size: 60, color: Colors.greenAccent),
+              const SizedBox(height: 20),
+              const Text(
+                "Đăng nhập vào Apptruyen",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/image/Google__G__logo.png',
-                      height: 30,
-                      width: 30,
-                    ),
-                    SizedBox(width: 10),
-                    Text(
-                      "Tiếp tục với Google",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade700,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Tạo tài khoản hoặc đăng nhập để lưu tiến trình đọc truyện.",
+                style: TextStyle(fontSize: 16, color: Colors.white70),
+              ),
+              const SizedBox(height: 30),
+              // Google button
+              GestureDetector(
+                onTap: () => signInWithGoogle(context),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/image/Google__G__logo.png',
+                        height: 30,
+                        width: 30,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            //Email button
-            const SizedBox(height: 30),
-            GestureDetector(
-              onTap: () => (Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              )),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.email,
-                      size: 30,
-                      color: Colors.grey.shade700,
-                    ),
-                    SizedBox(width: 10),
-                    Text("Tiếp tục với Email",
+                      SizedBox(width: 10),
+                      Text(
+                        "Tiếp tục với Google",
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade700,
-                        )),
-                  ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+              //Email button
+              const SizedBox(height: 30),
+              GestureDetector(
+                onTap: () => (Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                )),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.email,
+                        size: 30,
+                        color: Colors.grey.shade700,
+                      ),
+                      SizedBox(width: 10),
+                      Text("Tiếp tục với Email",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade700,
+                          )),
+                    ],
+                  ),
+                ),
+              ),
 
-            const SizedBox(height: 15),
-            Center(
-              child: Text.rich(
-                TextSpan(
-                  text: "Chưa có tài khoản?  ",
-                  style: const TextStyle(color: Colors.white70, fontSize: 23),
-                  children: [
-                    TextSpan(
-                      text: "Đăng ký",
-                      style: const TextStyle(color: Colors.greenAccent),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RegisterPage(),
-                            ),
-                          );
-                        },
-                    ),
-                  ],
+              const SizedBox(height: 15),
+              Center(
+                child: Text.rich(
+                  TextSpan(
+                    text: "Chưa có tài khoản?  ",
+                    style: const TextStyle(color: Colors.white70, fontSize: 23),
+                    children: [
+                      TextSpan(
+                        text: "Đăng ký",
+                        style: const TextStyle(color: Colors.greenAccent),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RegisterPage(),
+                              ),
+                            );
+                          },
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
 
-            const Spacer(),
-            Center(
-              child: Text.rich(
-                TextSpan(
-                  text: "Bằng việc tiếp tục, bạn đồng ý với ",
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  children: [
-                    TextSpan(
-                      text: "Điều khoản dịch vụ",
-                      style: const TextStyle(color: Colors.blue),
-                    ),
-                    const TextSpan(text: " / "),
-                    TextSpan(
-                      text: "Chính sách bảo mật",
-                      style: const TextStyle(color: Colors.blue),
-                    ),
-                  ],
+              const Spacer(),
+              Center(
+                child: Text.rich(
+                  TextSpan(
+                    text: "Bằng việc tiếp tục, bạn đồng ý với ",
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    children: [
+                      TextSpan(
+                        text: "Điều khoản dịch vụ",
+                        style: const TextStyle(color: Colors.blue),
+                      ),
+                      const TextSpan(text: " / "),
+                      TextSpan(
+                        text: "Chính sách bảo mật",
+                        style: const TextStyle(color: Colors.blue),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 15),
-          ],
+              const SizedBox(height: 15),
+            ],
+          ),
         ),
       ),
     );

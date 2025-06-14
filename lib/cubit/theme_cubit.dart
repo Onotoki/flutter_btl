@@ -29,9 +29,18 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   Future<void> loadTheme() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('themeMode') == 'light') {
+    final theme = prefs.getString('themeMode');
+
+    if (theme == 'light') {
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent),
+      );
+      print('chạy hàm đổi màu');
       emit(LightTheme());
-    } else if (prefs.getString('themeMode') == 'dark') {
+    } else {
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
+      );
       emit(DarkTheme());
     }
   }

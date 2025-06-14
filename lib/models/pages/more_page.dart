@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/models/pages/Intropage/intro_page.dart';
 import 'package:btl/cubit/theme_cubit.dart';
 import 'package:btl/cubit/theme_state.dart';
 
