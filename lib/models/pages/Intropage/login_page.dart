@@ -137,10 +137,11 @@ class LoginPageState extends State<LoginPage> {
                             builder: (context) => AdminStoryPage()),
                       );
                     } else {
-                      Navigator.pushReplacement(
+                      Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
                             builder: (context) => const HomePage()),
+                        (Route<dynamic> route) => false,
                       );
                     }
                   } on FirebaseAuthException catch (e) {
