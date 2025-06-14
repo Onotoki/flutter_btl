@@ -21,9 +21,10 @@ class _SearchPageState extends State<SearchPage> {
   bool _hasSearched = false;
   String _debugInfo = '';
 
-  List<Category> _allGenres = [];
-  List<String> _selectedSlugs = [];
-  bool _isFiltering = false;
+  List<Category> _allGenres = []; // Danh sách tất cả thể loại (tải từ API)
+  List<String> _selectedSlugs =
+      []; // Danh sách slug thể loại được chọn bởi người dùng
+  bool _isFiltering = false; // Cờ đánh dấu đang trong chế độ lọc
 
   @override
   void initState() {
@@ -39,10 +40,11 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadGenres() async {
     try {
-      final data = await OTruyenApi.getCategories();
+      final data =
+          await OTruyenApi.getCategories(); // Gọi API để lấy danh sách thể loại
       setState(() {
-        _allGenres =
-            ContentFilter.filterCategories(Category.parseCategories(data));
+        _allGenres = ContentFilter.filterCategories(
+            Category.parseCategories(data)); // Parse + lọc thể loại người lớn
       });
       print('Tải ${_allGenres.length} thể loại từ API');
     } catch (e) {
