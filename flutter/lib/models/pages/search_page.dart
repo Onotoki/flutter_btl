@@ -21,9 +21,10 @@ class _SearchPageState extends State<SearchPage> {
   bool _hasSearched = false;
   String _debugInfo = '';
 
-  List<Category> _allGenres = [];
-  List<String> _selectedSlugs = [];
-  bool _isFiltering = false;
+  List<Category> _allGenres = []; // Danh sách tất cả thể loại (tải từ API)
+  List<String> _selectedSlugs =
+      []; // Danh sách slug thể loại được chọn bởi người dùng
+  bool _isFiltering = false; // Cờ đánh dấu đang trong chế độ lọc
 
   @override
   void initState() {
@@ -39,10 +40,11 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadGenres() async {
     try {
-      final data = await OTruyenApi.getCategories();
+      final data =
+          await OTruyenApi.getCategories(); // Gọi API để lấy danh sách thể loại
       setState(() {
-        _allGenres =
-            ContentFilter.filterCategories(Category.parseCategories(data));
+        _allGenres = ContentFilter.filterCategories(
+            Category.parseCategories(data)); // Parse + lọc thể loại người lớn
       });
       print('Tải ${_allGenres.length} thể loại từ API');
     } catch (e) {
@@ -94,56 +96,71 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _filterByGenres() async {
+    // Nếu không chọn thể loại nào thì thoát luôn, không thực hiện gì cả
     if (_selectedSlugs.isEmpty) return;
 
+    // Cập nhật giao diện UI để báo hiệu đang lọc truyện
     setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-      _hasSearched = true;
-      _isFiltering = true;
-      _searchResults = [];
-      _debugInfo = 'Đang lọc truyện...';
+      _isLoading = true; // Bắt đầu hiển thị tiến trình tải
+      _errorMessage = ''; // Xóa lỗi cũ (nếu có)
+      _hasSearched = true; // Đánh dấu đã thực hiện tìm kiếm
+      _isFiltering = true; // Đang trong quá trình lọc
+      _searchResults = []; // Xóa kết quả tìm kiếm cũ
+      _debugInfo = 'Đang lọc truyện...'; // Hiển thị debug info
     });
 
-    final List<Story> combined = [];
+    final List<Story> combined =
+        []; // Danh sách tổng hợp truyện từ nhiều thể loại
 
+    // Duyệt qua từng thể loại người dùng đã chọn
     for (String slug in _selectedSlugs) {
       try {
+        // Gọi API để lấy danh sách truyện theo slug (thể loại)
         final result = await OTruyenApi.getComicsByCategory(slug);
+
+        // Kiểm tra dữ liệu trả về có chứa 'items' là danh sách truyện hay không
         if (result.containsKey('items') && result['items'] is List) {
-          final stories = _parseStories(result['items']);
+          final stories =
+              _parseStories(result['items']); // Chuyển JSON thành List<Story>
           print('Slug [$slug] trả về ${stories.length} truyện');
-          combined.addAll(stories);
+          combined.addAll(stories); // Thêm vào danh sách tổng hợp
         } else {
-          print('Slug [$slug] không có items trong API');
+          print(
+              'Slug [$slug] không có items trong API'); // Trường hợp không có dữ liệu
         }
       } catch (e) {
-        print('Lỗi khi gọi truyện theo thể loại [$slug]: $e');
+        print(
+            'Lỗi khi gọi truyện theo thể loại [$slug]: $e'); // Bắt lỗi nếu gọi API thất bại
       }
     }
 
-    // Loại bỏ trùng bằng slug
+    // Loại bỏ truyện trùng nhau theo slug (mỗi slug đại diện một truyện duy nhất)
     final Map<String, Story> uniqueMap = {};
     for (var story in combined) {
-      uniqueMap[story.slug] = story;
+      uniqueMap[story.slug] = story; // Ghi đè nếu bị trùng
     }
 
-    // Lọc người lớn
+    // Lọc bỏ truyện có nội dung người lớn (nếu có quy tắc riêng trong ContentFilter)
     final safeStories = ContentFilter.filterStories(uniqueMap.values.toList());
 
-    // Lọc chỉ lấy truyện có đầy đủ tất cả slug đã chọn
+    // Giữ lại những truyện thỏa mãn điều kiện có đầy đủ tất cả thể loại đã chọn
     final filteredByAllGenres = safeStories.where((story) {
-      final storySlugs = story.categories.map((c) => c.toLowerCase()).toSet();
-      return _selectedSlugs.every((slug) => storySlugs.contains(slug));
+      final storySlugs = story.categories
+          .map((c) => c.toLowerCase())
+          .toSet(); // Lấy danh sách slug thể loại của truyện
+      return _selectedSlugs.every((slug) => storySlugs
+          .contains(slug)); // Kiểm tra truyện có đủ slug đã chọn không
     }).toList();
 
     print('Tổng số truyện sau lọc là: ${filteredByAllGenres.length}');
 
+    // Cập nhật kết quả và giao diện
     setState(() {
-      _searchResults = filteredByAllGenres;
-      _isLoading = false;
+      _searchResults =
+          filteredByAllGenres; // Gán kết quả lọc vào danh sách hiển thị
+      _isLoading = false; // Tắt trạng thái loading
       _debugInfo =
-          'Đã lọc ${_selectedSlugs.length} thể loại. Kết quả: ${filteredByAllGenres.length} truyện.';
+          'Đã lọc ${_selectedSlugs.length} thể loại. Kết quả: ${filteredByAllGenres.length} truyện.'; // Cập nhật thông tin lọc
     });
   }
 
