@@ -4,9 +4,10 @@ import 'package:btl/components/info_book_widgets.dart/rate_widget.dart';
 import 'package:flutter/material.dart';
 
 class SlivertoboxadapterWidget extends StatelessWidget {
-  // final VoidCallback scrollDown;
+  final VoidCallback scrollDown;
   String linkImage;
-  SlivertoboxadapterWidget({super.key, required this.linkImage});
+  SlivertoboxadapterWidget(
+      {super.key, required this.scrollDown, required this.linkImage});
 
   @override
   Widget build(BuildContext context) {
@@ -34,20 +35,22 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                       flex: 3,
                       ontap: () {},
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(
+                      width: 10,
+                    ),
                     Button_Info(
-                      text: 'Audio',
+                      text: 'Chương',
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.green,
                       flex: 2,
                       ontap: () {
-                        // scrollDown();
+                        scrollDown();
                       },
                     )
                   ],
                 ),
 
-                SizedBox(
+                const SizedBox(
                   height: 12,
                 ),
 
@@ -56,17 +59,17 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Siêu Năng Lập Phương',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                     ),
                     Container(
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(4)),
-                        child: Text(
+                        child: const Text(
                           'Phiêu Lưu',
                           style: TextStyle(
                             fontSize: 11,
@@ -75,7 +78,7 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                   ],
                 ),
 
-                SizedBox(
+                const SizedBox(
                   height: 15,
                 ),
 
@@ -85,9 +88,9 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                   children: [
                     Expanded(
                         flex: 4,
-                        child: Container(
+                        child: SizedBox(
                           height: 60,
-                          child: Text(
+                          child: const Text(
                               'Cậu thiếu niên bình thường Vương Tiểu Tu trong 1 sự cố bất ngờ đã nhậ được "Siêu Năng Lập Phương"- hệ thống không gian từ văn minh vũ trụ. Cậu thiếu niên bình thường Vương Tiểu Tu trong 1 sự cố bất ngờ đã nhậ được '),
                         )),
                     Expanded(
@@ -97,7 +100,7 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                                 context: context,
                                 builder: (context) {
                                   return Container(
-                                    padding: EdgeInsets.symmetric(
+                                    padding: const EdgeInsets.symmetric(
                                         vertical: 16, horizontal: 10),
                                     height: 400,
                                     child: Column(
@@ -106,14 +109,14 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                                       mainAxisAlignment:
                                           MainAxisAlignment.start,
                                       children: [
-                                        Text(
+                                        const Text(
                                           'Tóm tắt',
                                           style: TextStyle(
                                               fontSize: 24,
                                               fontWeight: FontWeight.w700),
                                         ),
-                                        Divider(),
-                                        Text(
+                                        const Divider(),
+                                        const Text(
                                             style: TextStyle(fontSize: 16),
                                             'Cậu thiếu niên bình thường Vương Tiểu Tu trong 1 sự cố bất ngờ đã nhậ được "Siêu Năng Lập Phương"- hệ thống không gian từ văn minh vũ trụ. Cậu thiếu niên bình thường Vương Tiểu Tu trong 1 sự cố bất ngờ đã nhậ được ')
                                       ],
@@ -122,7 +125,7 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                                 },
                               );
                             },
-                            child: Text(
+                            child: const Text(
                               'Chi tiết',
                               style:
                                   TextStyle(fontSize: 14, color: Colors.green),
@@ -130,17 +133,29 @@ class SlivertoboxadapterWidget extends StatelessWidget {
                   ],
                 ),
 
-                SizedBox(
+                const SizedBox(
                   height: 20,
                 ),
 
                 // Đánh giá và bình luận
-                RateAllWidget(),
+                // TODO: Cập nhật RateAllWidget với các tham số cần thiết
+                // RateAllWidget(
+                //   idBook: 'book_id_here',
+                //   slug: 'book_slug_here',
+                //   title: 'Siêu Năng Lập Phương',
+                //   totalChapter: 100,
+                // ),
+                Container(
+                  height: 60,
+                  child: const Center(
+                    child: Text('Đánh giá và Yêu thích sẽ được cập nhật sau'),
+                  ),
+                ),
               ],
             ),
           ),
 
-          SizedBox(
+          const SizedBox(
             height: 14,
           ),
         ],

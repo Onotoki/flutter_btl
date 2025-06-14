@@ -1,87 +1,112 @@
-import 'package:btl/models/book_data.dart';
+import 'package:btl/components/info_book_widgets.dart/button_info.dart';
+import 'package:btl/pages/libary_tab.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../models/book.dart';
-import '../components/book_tile.dart';
+import 'package:btl/api/otruyen_api.dart';
+import 'package:btl/components/story_tile.dart';
+import 'package:btl/models/story.dart';
+import 'package:btl/pages/story_detail_page.dart';
+import 'package:flutter/services.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
 
   @override
-  _LibraryPageState createState() => _LibraryPageState();
+  State<LibraryPage> createState() => _LibraryPageState();
 }
 
 class _LibraryPageState extends State<LibraryPage> {
-  List<Book> favoriteBooks = [];
-  List<Book> continueReadingBooks = []; // Thêm danh sách sách đang đọc dở
+  List<Map<String, dynamic>> listBooksReading = [];
+  List<Map<String, dynamic>> listBooksFavorite = [];
+  Widget? listReading;
+  Widget? listFavorite;
+  bool _isLoading = true;
+  String? uid;
 
   @override
   void initState() {
     super.initState();
-    _loadBooks();
-  }
-
-  void _loadBooks() {
-    setState(() {
-      favoriteBooks = BookData.getBooksByCategory("Favorite Books");
-      continueReadingBooks = BookData.getBooksByCategory(
-          "Continue Reading"); // Giả định danh mục có sẵn
-    });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+    uid = user.uid;
+    _isLoading = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          "Library",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 27),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              buildSectionTitle(
-                  context, "Continue Reading", continueReadingBooks),
-              buildHorizontalBookList(
-                  continueReadingBooks), // Thêm phần continue reading
-
-              buildSectionTitle(context, "Favorite Books", favoriteBooks),
-              buildHorizontalBookList(favoriteBooks),
-            ],
+    // Kiểm tra đăng nhập
+    if (uid == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            'Vui lòng đăng nhập để xem thư viện',
+            style: TextStyle(fontSize: 16),
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget buildSectionTitle(
-      BuildContext context, String title, List<Book> books) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, left: 15),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          "$title (${books.length}) >",
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+    return DefaultTabController(
+      initialIndex: 0,
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 10,
+          automaticallyImplyLeading: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(40),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              child: Container(
+                height: 40,
+                margin: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                child: TabBar(
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  indicator: const BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  labelColor: Colors.white,
+                  tabs: [
+                    TabItem(title: 'Đang đọc'),
+                    TabItem(title: 'Yêu thích'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: TabBarView(children: [
+            LibraryTab(category: 'books_reading', uid: uid!),
+            LibraryTab(category: 'books_favorite', uid: uid!)
+          ]),
         ),
       ),
     );
   }
 
-  Widget buildHorizontalBookList(List<Book> books) {
-    return SizedBox(
-      height: 200,
-      child: books.isEmpty
-          ? const Center(child: Text("No books found", style: TextStyle()))
-          : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: books.length,
-              itemBuilder: (context, index) {
-                return BookTile(linkImage: books[index].imagePath);
-              },
-            ),
+  Widget TabItem({required String title}) {
+    return Tab(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }

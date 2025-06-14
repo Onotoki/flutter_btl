@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'book_page.dart';
 import 'library_page.dart';
 import 'more_page.dart';
+import 'categories_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,15 +17,15 @@ class _HomePageState extends State<HomePage> {
   int _index = 0;
 
   //Danh sách trang
-  List<Widget> _pages = [
+  final List<Widget> _pages = [
     //Home
-    BookPage(),
+    const BookPage(),
 
     //Categories
-    CategoriesPage(),
+    const CategoriesPage(),
 
     //Library
-    LibraryPage(),
+    const LibraryPage(),
 
     //More
     Person(),
@@ -35,7 +36,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: _pages[_index],
       bottomNavigationBar: Container(
-        padding: EdgeInsets.only(top: 3),
+        padding: const EdgeInsets.only(top: 3),
         decoration: BoxDecoration(
             border: Border(
                 top: BorderSide(color: Theme.of(context).colorScheme.primary))),
@@ -49,12 +50,12 @@ class _HomePageState extends State<HomePage> {
           },
           type: BottomNavigationBarType.fixed,
           currentIndex: _index,
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Trang chủ"),
             BottomNavigationBarItem(
-                icon: Icon(Icons.search_sharp), label: "Categories"),
-            BottomNavigationBarItem(icon: Icon(Icons.book), label: "Library"),
-            BottomNavigationBarItem(icon: Icon(Icons.menu), label: "Person"),
+                icon: Icon(Icons.category), label: "Thể loại"),
+            BottomNavigationBarItem(icon: Icon(Icons.book), label: "Thư viện"),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Cá nhân"),
           ],
         ),
       ),

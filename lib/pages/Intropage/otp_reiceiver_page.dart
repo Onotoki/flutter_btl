@@ -1,22 +1,21 @@
 import 'package:btl/pages/Intropage/intro_page.dart';
-import 'package:btl/pages/Intropage/register_page.dart'; // Thêm HomePage vào
 import 'package:btl/pages/home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-int attempts = 0;
-
 class OtpReceiverPage extends StatefulWidget {
   final String email;
   final String generatedOtp;
-  final String password; // Nhận OTP được tạo từ RegisterPage
+  final String password;
+  final String nickname;
 
   const OtpReceiverPage({
     super.key,
     required this.email,
     required this.generatedOtp,
     required this.password,
+    required this.nickname,
   });
 
   @override
@@ -24,94 +23,107 @@ class OtpReceiverPage extends StatefulWidget {
 }
 
 class _OtpReceiverPageState extends State<OtpReceiverPage> {
+  // Controller để lấy giá trị OTP từ TextField
   final TextEditingController otpController = TextEditingController();
+  bool _isLoading = false;
+  // Biến để kiểm tra trạng thái đăng ký
+  Future<void> _verifyOtpAndRegister() async {
+    setState(() => _isLoading = true);
 
-  void verifyOtp() async {
-  final enteredOtp = otpController.text.trim();
-  print('Entered OTP: $enteredOtp');
-  print('Generated OTP: ${widget.generatedOtp}');
+    final enteredOtp = otpController.text.trim();
+    // Kiểm tra xem người dùng đã nhập mã OTP hay chưa
+    if (enteredOtp != widget.generatedOtp) {
+      setState(() => _isLoading = false);
+      // Hiển thị thông báo lỗi nếu mã OTP không đúng
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mã OTP không đúng. Vui lòng thử lại.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
-  if (enteredOtp == widget.generatedOtp) {
     try {
-      final methods = await FirebaseAuth.instance.fetchSignInMethodsForEmail(widget.email);
-      print('Fetched sign-in methods: $methods');
+      // Kiểm tra email đã tồn tại chưa
+      final methods =
+          await FirebaseAuth.instance.fetchSignInMethodsForEmail(widget.email);
 
-      if (methods.isEmpty) {
-        // Tạo tài khoản mới
-        print('Creating new user...');
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: widget.email,
-          password: widget.password,
-        );
-        print('User created.');
-
-        await FirebaseFirestore.instance.collection('users').doc(widget.email).set({
-          'email': widget.email,
-          'created_at': Timestamp.now(),
-        });
-        print('User added to Firestore.');
-
+      if (methods.isNotEmpty) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Account created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        // Đăng nhập nếu tài khoản đã tồn tại
-        print('Logging in existing user...');
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: widget.email,
-          password: widget.password,
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logged in successfully!'),
+            content: Text('Email đã được đăng ký. Vui lòng đăng nhập.'),
             backgroundColor: Colors.orange,
           ),
         );
+        return;
       }
 
-      // Điều hướng
-      print('Navigating to IntroPage...');
+      // Tạo tài khoản mới
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: widget.email,
+        password: widget.password,
+      );
+
+      // Lưu thông tin user vào Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user?.email)
+          .set({
+        'uid': userCredential.user?.uid,
+        'email': widget.email,
+        'nickname': widget.nickname,
+        'createdAt': FieldValue.serverTimestamp(),
+        'password': widget.password,
+        'authProvider': 'email',
+      });
+
+      // Đăng nhập thành công
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Đăng ký thành công!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ));
+
+      // Điều hướng về trang chính
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const IntroPage()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
         (route) => false,
       );
     } catch (e) {
-      print('Error during OTP verification: $e');
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Lỗi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Incorrect OTP'),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF003E32),
       appBar: AppBar(
-        title: const Text("Verify OTP", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title:
+            const Text("Xác thực OTP", style: TextStyle(color: Colors.white)),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         automaticallyImplyLeading: false,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.close, size: 30, color: Colors.white),
             onPressed: () {
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => const HomePage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const IntroPage()),
+              );
             },
           ),
         ],
@@ -121,56 +133,75 @@ class _OtpReceiverPageState extends State<OtpReceiverPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 30),
+            const Spacer(),
             const Icon(Icons.email_outlined,
                 size: 60, color: Colors.greenAccent),
+            const SizedBox(height: 20),
+            const Text(
+              "Xác thực email",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 10),
-            Text("Enter the verification code sent to:",
-                style: const TextStyle(color: Colors.white70, fontSize: 14)),
-            const SizedBox(height: 6),
-            Text(widget.email,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16)),
-            const SizedBox(height: 30),
-            TextField(
-              controller: otpController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "OTP code",
-                labelStyle: const TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Colors.white10,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.greenAccent),
-                ),
+            Text(
+              "Chúng tôi đã gửi mã xác thực đến ${widget.email}",
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
               ),
             ),
             const SizedBox(height: 30),
+
+            // OTP Input
+            TextField(
+              controller: otpController,
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white10,
+                labelText: "Nhập mã OTP",
+                labelStyle: const TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.greenAccent),
+                ),
+                counterText: '',
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Verify Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: verifyOtp,
+                onPressed: _isLoading ? null : _verifyOtpAndRegister,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.greenAccent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text(
-                  "Verify",
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.black)
+                    : const Text(
+                        "Verify",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
+            const Spacer(),
           ],
         ),
       ),

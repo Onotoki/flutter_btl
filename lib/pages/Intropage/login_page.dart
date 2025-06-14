@@ -1,6 +1,8 @@
 import 'package:btl/pages/Intropage/forget_password_page.dart';
 import 'package:btl/pages/Intropage/intro_page.dart';
+import 'package:btl/pages/admin/admin_story_page.dart';
 import 'package:btl/pages/home_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +15,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class LoginPageState extends State<LoginPage> {
+  // Quản lý các TextEditingController
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   @override
@@ -43,7 +46,7 @@ class LoginPageState extends State<LoginPage> {
             const Spacer(),
 
             const Text(
-              "Login",
+              "Đăng nhập",
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
@@ -76,7 +79,7 @@ class LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white10,
-                labelText: "Password",
+                labelText: "Mật khẩu",
                 labelStyle: const TextStyle(color: Colors.white70),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -86,33 +89,49 @@ class LoginPageState extends State<LoginPage> {
             const SizedBox(height: 30),
 
             // Nút Login
-            // Nút Login
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
+                  //Xử lý đăng nhập
                   try {
-                    await FirebaseAuth.instance.signInWithEmailAndPassword(
+                    final userCredential =
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
                       email: emailController.text.trim(),
                       password: passwordController.text.trim(),
                     );
 
+                    // Lấy thông tin user từ Firestore
+                    final userDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(userCredential.user!.uid)
+                        .get();
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Login successful"),
+                        content: Text("Đăng nhập thành công"),
                         backgroundColor: Colors.green,
                       ),
                     );
 
-                    // Chỉ chuyển hướng khi đăng nhập thành công
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HomePage()),
-                    );
+                    // Kiểm tra nếu là admin
+                    if (userDoc.exists && userDoc.data()?['isAdmin'] == true) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AdminStoryPage()),
+                      );
+                    } else {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const HomePage()),
+                      );
+                    }
                   } on FirebaseAuthException catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text("Login failed: ${e.message}"),
+                        content: Text("Đăng nhập thất bại: ${e.message}"),
                         backgroundColor: Colors.redAccent,
                       ),
                     );
@@ -126,7 +145,7 @@ class LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 child: const Text(
-                  "Login",
+                  "Đăng nhập",
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black,
@@ -139,7 +158,7 @@ class LoginPageState extends State<LoginPage> {
             Center(
               child: RichText(
                 text: TextSpan(
-                  text: 'Forget password?',
+                  text: 'Quên mật khẩu?',
                   style: const TextStyle(
                     color: Colors.white,
                     decoration: TextDecoration.underline,

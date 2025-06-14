@@ -1,12 +1,134 @@
+import 'dart:math';
+
 import 'package:btl/components/info_book_widgets.dart/comments.dart';
 import 'package:btl/components/info_book_widgets.dart/rate_list_icons.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class RateAllWidget extends StatelessWidget {
-  const RateAllWidget({super.key});
+class RateAllWidget extends StatefulWidget {
+  final String idBook;
+  final String slug;
+  final String title;
+  final int totalChapter;
+
+  const RateAllWidget({
+    super.key,
+    required this.totalChapter,
+    required this.slug,
+    required this.idBook,
+    required this.title,
+  });
+
+  @override
+  State<RateAllWidget> createState() => _RateAllWidgetState();
+}
+
+class _RateAllWidgetState extends State<RateAllWidget> {
+  bool isFavorite = false;
+  bool hasFavorite = false;
+  String? uid;
+
+  Future<void> updateFavor(
+    String idBook,
+    String uid,
+    String slug,
+    bool hasFavorite,
+    bool isFavorite,
+  ) async {
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('user_reading')
+          .doc(uid)
+          .collection('books_favorite')
+          .doc(idBook);
+      if (hasFavorite != true && isFavorite == true) {
+        docRef.set({'slug': slug, 'id_book': idBook});
+      } else if (hasFavorite == true && isFavorite == false) {
+        docRef.delete();
+      }
+    } catch (e) {
+      print('Lỗi khi kiểm tra yêu thích: $e');
+    }
+  }
+
+  Future<void> checkIsFavorite() async {
+    if (uid == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('user_reading')
+          .doc(uid)
+          .collection('books_favorite')
+          .doc(widget.idBook)
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          hasFavorite = true;
+          isFavorite = true;
+        });
+      }
+    } catch (e) {
+      print('Lỗi khi kiểm tra yêu thích: $e');
+    }
+  }
+
+  void getDataFirebase() {
+    _rate = FirebaseFirestore.instance
+        .collection('books')
+        .doc(widget.idBook)
+        .snapshots();
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      uid = user.uid;
+      checkIsFavorite(); // Gọi để khởi tạo trạng thái
+    }
+  }
+
+  late Stream<DocumentSnapshot<Map<String, dynamic>>> _rate;
+
+  @override
+  void initState() {
+    super.initState();
+    getDataFirebase();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (uid != null) {
+      updateFavor(widget.idBook, uid!, widget.slug, hasFavorite, isFavorite);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: _rate,
+      builder:
+          (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return const Text('Something went wrong');
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Rate();
+        }
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data?.data() as Map<String, dynamic>?;
+          final currentRate = data!['rate'];
+          final countRate = data['count'];
+          return Rate(currentRate: currentRate, countRate: countRate);
+        }
+        // Lấy điểm và số lượng đánh giá
+        return Rate();
+      },
+    );
+  }
+
+  Widget Rate({double currentRate = 0, int countRate = 0}) {
     return Row(
       children: [
         Expanded(
@@ -15,38 +137,43 @@ class RateAllWidget extends StatelessWidget {
             onTap: () {
               showModalBottomSheet(
                 context: context,
+                isScrollControlled: true,
                 builder: (context) {
                   return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      height: 300,
-                      width: double.infinity,
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 5,
+                    padding: const EdgeInsets.only(
+                        top: 8.0, left: 8, right: 8, bottom: 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 5),
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                           ),
-                          Text('Siêu Năng Lập Phương',
-                              style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.w700)),
-                          Text('9,0/ 2 đánh giá'),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: RatingSelector(),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          currentRate != 0
+                              ? '$currentRate/ $countRate đánh giá'
+                              : 'Chưa có đánh giá nào',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 18),
+                        RatingSelector(
+                          idBook: widget.idBook,
+                          currentRate: double.parse(currentRate.toString()),
+                          countRate: countRate,
+                        ),
+                      ],
                     ),
                   );
                 },
               );
             },
-            child: Container(
+            child: SizedBox(
               height: 60,
-              // color: Colors.amber,
               child: Stack(
                 alignment: AlignmentDirectional.bottomCenter,
                 children: [
@@ -58,29 +185,28 @@ class RateAllWidget extends StatelessWidget {
                         Icons.tag_faces_rounded,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      Text(
+                      const Text(
                         'Đánh giá',
                         style: TextStyle(fontSize: 14),
-                      )
+                      ),
                     ],
                   ),
                   Positioned(
                     top: 0,
-                    left: 128,
+                    left: currentRate != 0 ? 85 : -1000,
                     child: Container(
-                      padding: EdgeInsets.all(4),
+                      width: 28,
+                      height: 20,
                       decoration: BoxDecoration(
-                        border:
-                            Border.all(color: Colors.transparent, width: 0.0),
-                        shape: BoxShape.circle,
-                        color: const Color.fromARGB(255, 242, 184, 58),
+                        color: Colors.deepOrange,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        '9.0',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      child: Center(
+                          child: Text('$currentRate',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 11))),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -91,16 +217,20 @@ class RateAllWidget extends StatelessWidget {
           child: GestureDetector(
             onTap: () {
               showModalBottomSheet(
-                isScrollControlled: true,
                 context: context,
+                isScrollControlled: true,
                 builder: (context) {
-                  return CommentsWidget();
+                  return FractionallySizedBox(
+                    heightFactor: 0.7,
+                    child: CommentsWidget(
+                      idBook: widget.idBook,
+                    ),
+                  );
                 },
               );
             },
             child: Container(
               height: 60,
-              // color: Colors.deepOrange,
               alignment: Alignment.center,
               decoration:
                   BoxDecoration(borderRadius: BorderRadius.circular(50)),
@@ -111,7 +241,46 @@ class RateAllWidget extends StatelessWidget {
                     Icons.messenger,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  Text('Bình luận')
+                  const Text('Bình luận'),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: GestureDetector(
+            onTap: () {
+              if (uid == null) {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return const AlertDialog(
+                      content: Text('Vui lòng đăng nhập'),
+                    );
+                  },
+                );
+              } else {
+                setState(() {
+                  isFavorite = !isFavorite;
+                });
+              }
+            },
+            child: Container(
+              height: 60,
+              alignment: Alignment.center,
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(50)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    color: isFavorite
+                        ? Colors.red
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const Text('Yêu thích'),
                 ],
               ),
             ),
