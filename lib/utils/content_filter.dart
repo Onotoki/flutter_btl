@@ -1,28 +1,67 @@
 import 'package:btl/models/story.dart';
 import 'package:btl/models/category.dart';
 
+/// Lọc Nội dung (ContentFilter)
+///
+/// Mô tả: Cung cấp các hàm tiện ích để lọc nội dung không phù hợp và phân loại truyện.
+///
+/// Chức năng:
+/// - Lọc bỏ các truyện/thể loại có chứa từ khóa người lớn
+/// - Phân biệt giữa truyện tranh và truyện chữ dựa trên thông tin truyện
+/// - Hỗ trợ nhiều ngôn ngữ và định dạng từ khóa khác nhau
+///
+/// Phương thức chính:
+/// - isAdultCategory(String categoryName): Kiểm tra tên thể loại có phải người lớn không
+/// - isAdultStory(Story story): Kiểm tra truyện có nội dung người lớn không
+/// - filterStories(List<Story> stories): Trả về danh sách truyện đã được lọc
+/// - filterCategories(List<Category> categories): Lọc danh sách thể loại
 class ContentFilter {
   // Danh sách các từ khóa liên quan đến nội dung người lớn cần lọc
   static final List<String> adultKeywords = [
+    // Tiếng Anh
     'adult',
-    'người lớn',
     'mature',
     '16+',
     '18+',
+    '19+',
     'ecchi',
-    'mature',
     'smut',
-    'manhua',
+    'hentai',
+    'porn',
+    'sex',
+    'xxx',
+    'erotic',
+    'nudity',
+
+    // Các thể loại manga/anime người lớn
     'shounen-ai',
     'shoujo-ai',
+    'yaoi',
+    'yuri',
     'soft-yaoi',
     'soft-yuri',
     'josei',
     'seinen',
     'harem',
+    'reverse-harem',
     'gender-bender',
     'doujinshi',
+
+    // Tiếng Việt
+    'người lớn',
+    'nội dung nhạy cảm',
+    'không phù hợp trẻ em',
+    'dành cho người lớn',
+    'cảnh nóng',
+    'tình cảm',
+    'đam mỹ',
     'dam-my',
+    'gl',
+    'bl',
+
+    // Các từ khóa khác
+    'manhua', // Một số manhua có nội dung người lớn
+    'webtoon', // Một số webtoon có nội dung người lớn
   ];
 
   // Danh sách thể loại dành cho truyện chữ
@@ -39,7 +78,7 @@ class ContentFilter {
     // 'ebook',
     // 'light novel',
     // 'huyền huyễn',
-    
+
     // 'truyện ngắn',
     // 'tâm lý',
     // 'lịch sử',

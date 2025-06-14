@@ -420,17 +420,23 @@ class _EpubChapterPageState extends State<EpubChapterPage> {
    * Phương thức này được gọi mỗi khi người dùng cuộn trang để cập nhật
    * phần trăm đã đọc và đồng bộ lên Firebase nếu cần thiết.
    */
+  /// Cập nhật tiến độ đọc dựa trên vị trí cuộn
+  /// Phương thức này sẽ tính toán phần trăm đã đọc và lưu lên Firebase nếu cần thiết
   void _updateReadingProgress() {
+    // Kiểm tra xem ScrollController có client không
     if (!_scrollController.hasClients) return;
 
-    final scrollOffset = _scrollController.offset;
+    // Lấy vị trí cuộn hiện tại (offset) và chiều dài tối đa có thể cuộn
+    final scrollOffset =
+        _scrollController.offset; // offset là vị trí cuộn hiện tại
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
 
+    // Nếu chiều dài tối đa lớn hơn 0, tính toán tiến độ
     if (maxScrollExtent > 0) {
       final newProgress =
           (scrollOffset / maxScrollExtent * 100).clamp(0.0, 100.0);
       setState(() {
-        _readingProgress = newProgress;
+        _readingProgress = newProgress; // Cập nhật tiến độ đọc
       });
 
       // Lưu tiến độ lên Firebase nếu có thay đổi đáng kể

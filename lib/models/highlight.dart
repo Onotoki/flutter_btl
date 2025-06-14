@@ -1,14 +1,17 @@
+// Lớp mô hình dữ liệu đại diện cho một highlight (đánh dấu) trong truyện chữ
 class Highlight {
-  final String id;
-  final String text;
-  final String chapterTitle;
-  final int chapterNumber;
-  final String storySlug;
-  final int startIndex;
-  final int endIndex;
-  final String color;
-  final DateTime createdAt;
+  // Các thuộc tính của highlight
+  final String id; // ID duy nhất của highlight
+  final String text; // Văn bản được đánh dấu
+  final String chapterTitle; // Tiêu đề chương chứa highlight
+  final int chapterNumber; // Số thứ tự chương
+  final String storySlug; // Slug của truyện chứa highlight
+  final int startIndex; // Vị trí bắt đầu của highlight trong văn bản
+  final int endIndex; // Vị trí kết thúc của highlight trong văn bản
+  final String color; // Màu sắc của highlight
+  final DateTime createdAt; // Thời gian tạo highlight
 
+  // Constructor khởi tạo đối tượng Highlight
   Highlight({
     required this.id,
     required this.text,
@@ -21,6 +24,7 @@ class Highlight {
     required this.createdAt,
   });
 
+  // Chuyển đổi đối tượng Highlight thành Map để lưu trữ hoặc truyền dữ liệu
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -35,6 +39,7 @@ class Highlight {
     };
   }
 
+  // Factory method tạo Highlight từ dữ liệu JSON
   factory Highlight.fromJson(Map<String, dynamic> json) {
     return Highlight(
       id: json['id'],

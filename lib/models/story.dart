@@ -1,19 +1,22 @@
+/// Lớp mô hình dữ liệu đại diện cho một câu chuyện/truyện
+/// Hỗ trợ nhiều loại truyện: truyện tranh (comic), sách điện tử (ebook), truyện chữ (text_story)
 class Story {
   // Thuộc tính của kiểu Story
-  final String id;
-  final String title;
-  final String description;
-  final String thumbnail;
-  final List<String> categories;
-  final String status;
-  final int views;
-  final int chapters;
-  final String updatedAt;
-  final String slug;
-  final List<String> authors;
-  final List<dynamic> chaptersData;
-  final String itemType; // 'comic', 'ebook', hoặc 'text_story'
+  final String id; // Mã định danh duy nhất của truyện
+  final String title; // Tiêu đề truyện
+  final String description; // Mô tả nội dung truyện
+  final String thumbnail; // Đường dẫn hình thu nhỏ
+  final List<String> categories; // Danh sách thể loại truyện
+  final String status; // Trạng thái truyện (đang cập nhật, hoàn thành, etc.)
+  final int views; // Số lượt xem
+  final int chapters; // Số chương
+  final String updatedAt; // Thời gian cập nhật cuối cùng
+  final String slug; // Đường dẫn thân thiện URL
+  final List<String> authors; // Danh sách tác giả
+  final List<dynamic> chaptersData; // Dữ liệu chi tiết các chương
+  final String itemType; // Loại truyện: 'comic', 'ebook', hoặc 'text_story'
 
+  /// Constructor khởi tạo đối tượng Story với các thuộc tính bắt buộc và tùy chọn
   Story({
     required this.id,
     required this.title,
@@ -30,16 +33,18 @@ class Story {
     this.itemType = 'comic', // Mặc định là truyện tranh
   });
 
-  // Kiểm tra xem truyện này có phải truyện chữ không
+  /// Kiểm tra xem truyện này có phải truyện chữ không
   bool get isNovel => itemType == 'ebook' || itemType == 'text_story';
 
-  // Kiểm tra xem truyện này có phải truyện tranh không
+  /// Kiểm tra xem truyện này có phải truyện tranh không
   bool get isComic => itemType == 'comic';
 
+  /// Factory method để tạo đối tượng Story từ dữ liệu JSON
+  /// Xử lý nhiều định dạng JSON khác nhau từ các API khác nhau
   factory Story.fromJson(Map<String, dynamic> json) {
     try {
-      // In ra cấu trúc JSON để debug
-      print('Parsing Story from JSON: ${json.keys.toList()}');
+      // In ra cấu trúc JSON để gỡ lỗi
+      print('Đang phân tích Story từ JSON: ${json.keys.toList()}');
 
       // Xử lý trường hợp dữ liệu nằm trong 'items'
       if (json.containsKey('items') &&
@@ -48,7 +53,7 @@ class Story {
         try {
           return Story.fromJson(json['items'][0]);
         } catch (e) {
-          print('Error parsing nested item from items: $e');
+          print('Lỗi khi phân tích mục lồng từ items: $e');
         }
       }
 
@@ -57,11 +62,11 @@ class Story {
         try {
           return Story.fromJson(json['item']);
         } catch (e) {
-          print('Error parsing nested item from item: $e');
+          print('Lỗi khi phân tích mục lồng từ item: $e');
         }
       }
 
-      // Xác định loại truyện
+      /// Hàm helper xác định loại truyện dựa trên dữ liệu JSON
       String determineItemType(Map<String, dynamic> json) {
         try {
           // Kiểm tra trường itemType từ API
@@ -77,14 +82,14 @@ class Story {
             return 'ebook';
           }
         } catch (e) {
-          print('Error determining item type: $e');
+          print('Lỗi khi xác định loại mục: $e');
         }
 
         // Mặc định là comic nếu không xác định được
         return 'comic';
       }
 
-      // Xử lý categories có thể là List<dynamic> hoặc List<Map>
+      /// Hàm helper phân tích danh sách thể loại từ dữ liệu JSON đa dạng
       List<String> parseCategories(dynamic categoriesData) {
         try {
           if (categoriesData is List) {
@@ -103,12 +108,12 @@ class Story {
             return [categoriesData];
           }
         } catch (e) {
-          print('Error parsing categories: $e');
+          print('Lỗi khi phân tích thể loại: $e');
         }
         return [];
       }
 
-      // Xử lý authors - có thể là List<dynamic> hoặc String
+      /// Hàm helper phân tích danh sách tác giả từ dữ liệu JSON
       List<String> parseAuthors(dynamic authorsData) {
         try {
           if (authorsData is List) {
@@ -123,12 +128,12 @@ class Story {
             return [authorsData];
           }
         } catch (e) {
-          print('Error parsing authors: $e');
+          print('Lỗi khi phân tích tác giả: $e');
         }
         return [];
       }
 
-      // Trích xuất thumbnail với nhiều tên trường có thể có
+      /// Hàm helper trích xuất URL hình thu nhỏ từ nhiều trường khác nhau
       String extractThumbnail(Map<String, dynamic> json) {
         try {
           final cdn = 'https://img.otruyenapi.com';
@@ -182,11 +187,11 @@ class Story {
             }
           }
 
-          // fallback nếu có trường thumbnail khác
+          // Phương án dự phòng nếu có trường thumbnail khác
           for (var field in ['thumbnail', 'cover', 'image']) {
             if (json.containsKey(field) && json[field] != null) {
               var thumbUrl = json[field].toString();
-              print('Found thumbnail in field $field: $thumbUrl');
+              print('Tìm thấy hình thu nhỏ trong trường $field: $thumbUrl');
 
               // Kiểm tra để tạo URL đầy đủ
               if (thumbUrl.startsWith('http')) {
@@ -199,14 +204,14 @@ class Story {
             }
           }
         } catch (e) {
-          print('Error extracting thumbnail: $e');
+          print('Lỗi khi trích xuất hình thu nhỏ: $e');
         }
 
-        print('No thumbnail found in JSON');
-        return 'https://via.placeholder.com/150x200'; // Default placeholder
+        print('Không tìm thấy hình thu nhỏ trong JSON');
+        return 'https://via.placeholder.com/150x200'; // Hình mặc định
       }
 
-      // Xử lý trường chapters để đếm số chương
+      /// Hàm helper đếm số chương từ dữ liệu chapters
       int countChapters(dynamic chaptersData) {
         try {
           if (chaptersData is List && chaptersData.isNotEmpty) {
@@ -221,7 +226,7 @@ class Story {
             return count > 0 ? count : 1;
           }
         } catch (e) {
-          print('Error counting chapters: $e');
+          print('Lỗi khi đếm chương: $e');
         }
         return 1;
       }
@@ -250,15 +255,15 @@ class Story {
         itemType: itemType,
       );
     } catch (e) {
-      print('Error in Story.fromJson: $e');
-      // Return a default story object in case of error
+      print('Lỗi trong Story.fromJson: $e');
+      // Trả về đối tượng story mặc định trong trường hợp lỗi
       return Story(
         id: '',
-        title: 'Error Loading Story',
+        title: 'Lỗi Tải Truyện',
         description: '',
         thumbnail: 'https://via.placeholder.com/150x200',
         categories: [],
-        status: 'Unknown',
+        status: 'Không xác định',
         views: 0,
         chapters: 0,
         updatedAt: '',
@@ -268,7 +273,7 @@ class Story {
     }
   }
 
-  // Convert Story object to JSON for caching
+  /// Chuyển đổi đối tượng Story thành JSON để lưu cache
   Map<String, dynamic> toJson() {
     return {
       'id': id,

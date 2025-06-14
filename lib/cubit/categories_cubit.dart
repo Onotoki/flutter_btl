@@ -73,6 +73,96 @@ class CategoriesCubit extends CacheableCubit<List<Category>> {
     return categories;
   }
 
+  /// Phân loại categories dựa trên tên thể loại
+  /// Trả về Map với 2 key: 'comic' và 'novel'
+  Map<String, List<Category>> categorizeByType(List<Category> categories) {
+    final Map<String, List<Category>> result = {
+      'comic': [],
+      'novel': [],
+    };
+
+    // Danh sách các thể loại thường thuộc về truyện chữ/novel
+    final novelKeywords = [
+      'tiểu thuyết',
+      'văn học',
+      'light novel',
+      'ebook',
+      'truyện chữ',
+      'ngôn tình',
+      'cung đấu',
+      'xuyên không',
+      'trọng sinh',
+      'đam mỹ',
+      'tu tiên',
+      'huyền huyễn',
+      'kiếm hiệp',
+      'võ hiệp',
+      'cổ đại',
+      'hiện đại',
+      'tương lai',
+      'khoa học',
+      'viễn tưởng',
+      'fantasy',
+      'romance',
+      'drama',
+      'mystery',
+      'thriller'
+    ];
+
+    // Danh sách các thể loại thường thuộc về truyện tranh/comic
+    final comicKeywords = [
+      'action',
+      'adventure',
+      'comedy',
+      'shounen',
+      'shoujo',
+      'seinen',
+      'josei',
+      'mecha',
+      'martial arts',
+      'supernatural',
+      'horror',
+      'psychological',
+      'slice of life',
+      'school life',
+      'sports',
+      'historical',
+      'military',
+      'music',
+      'one shot',
+      'webtoon',
+      'manga',
+      'manhwa',
+      'manhua',
+      'doujinshi'
+    ];
+
+    for (final category in categories) {
+      final lowerName = category.name.toLowerCase();
+
+      bool isNovel = novelKeywords
+          .any((keyword) => lowerName.contains(keyword.toLowerCase()));
+
+      bool isComic = comicKeywords
+          .any((keyword) => lowerName.contains(keyword.toLowerCase()));
+
+      if (isNovel && !isComic) {
+        result['novel']!.add(category);
+      } else if (isComic && !isNovel) {
+        result['comic']!.add(category);
+      } else {
+        // Nếu không xác định được hoặc có thể áp dụng cho cả hai,
+        // thêm vào cả hai danh sách
+        result['comic']!.add(category);
+        result['novel']!.add(category);
+      }
+    }
+
+    print(
+        'Đã phân loại: ${result['comic']!.length} thể loại truyện tranh, ${result['novel']!.length} thể loại truyện chữ');
+    return result;
+  }
+
   /// Phương thức khôi phục dữ liệu thể loại từ cache
   @override
   List<Category>? parseFromCache(dynamic cachedData) {

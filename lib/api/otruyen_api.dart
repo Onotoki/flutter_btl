@@ -3,12 +3,24 @@ import 'package:http/http.dart' as http;
 
 /// Lớp API chính để xử lý tất cả các yêu cầu API
 /// Cung cấp các phương thức để lấy dữ liệu truyện tranh và truyện chữ
+///
+/// Base URL chính: https://flutter.bug.io.vn/v1/api
+/// Base URL dự phòng: http://localhost:5000/v1/api (cho mục đích phát triển)
+///
+/// Tính năng:
+/// - Xử lý và kiểm tra tính hợp lệ của phản hồi từ API
+/// - Cung cấp thông tin debug trong quá trình phát triển
+/// - Hỗ trợ timeout và error handling toàn diện
+/// - Chuẩn hóa dữ liệu từ nhiều định dạng API khác nhau
 class OTruyenApi {
   // Url API - Đảm bảo rằng đúng IP địa chỉ máy chủ
   static const String baseUrl = 'https://flutter.bug.io.vn/v1/api';
   // static const String baseUrl = 'http://192.168.48.186:5000/v1/api';
   // Backup URL nếu cần thiết
   // static const String baseUrl = 'http://localhost:5000/v1/api';
+
+  /// Timeout mặc định cho các API call (10 giây)
+  static const Duration defaultTimeout = Duration(seconds: 10);
 
   /// Ghi log phản hồi từ API để debug dễ hơn
   /// [endpoint] - điểm cuối API được gọi
@@ -49,7 +61,7 @@ class OTruyenApi {
     }
   }
 
-  /// Hàm min tự định nghĩa vì có thể dart:math min chưa được import
+  /// Hàm min tự định nghĩa
   static int min(int a, int b) => a < b ? a : b;
 
   /// Xử lý phản hồi API chung - kiểm tra trạng thái và trả về dữ liệu
@@ -451,5 +463,88 @@ class OTruyenApi {
     }
 
     throw Exception('Cấu trúc API chương không hợp lệ');
+  }
+
+  /// Kiểm tra kết nối API bằng cách gọi endpoint /health
+  /// Trả về true nếu API hoạt động bình thường
+  static Future<bool> checkApiHealth() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/health'),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Lỗi kiểm tra sức khỏe API: $e');
+      return false;
+    }
+  }
+
+  /// Lấy thống kê tổng quan về số lượng truyện, chương, v.v.
+  /// Trả về Map chứa các thông số thống kê
+  static Future<Map<String, dynamic>?> getStatistics() async {
+    try {
+      final response = await _safeApiCall('$baseUrl/statistics');
+      _logResponse('/statistics', response);
+      return _processResponse(response);
+    } catch (e) {
+      print('Lỗi khi lấy thống kê: $e');
+      return null;
+    }
+  }
+
+  /// Lấy danh sách truyện được đề xuất dựa trên slug truyện hiện tại
+  /// [slug] - slug của truyện hiện tại để tìm đề xuất tương tự
+  /// Trả về Map chứa danh sách truyện đề xuất
+  static Future<Map<String, dynamic>?> getRecommendations(String slug) async {
+    try {
+      final response =
+          await _safeApiCall('$baseUrl/truyen-tranh/$slug/tuong-tu');
+      _logResponse('/truyen-tranh/$slug/tuong-tu', response);
+      return _processResponse(response);
+    } catch (e) {
+      print('Lỗi khi lấy đề xuất truyện: $e');
+      return null;
+    }
+  }
+
+  /// Phương thức tiện ích để format URL với query parameters
+  /// [endpoint] - endpoint cơ sở
+  /// [queryParams] - Map các tham số query
+  /// Trả về URL đầy đủ với các tham số
+  static String _buildUrlWithParams(
+      String endpoint, Map<String, dynamic>? queryParams) {
+    final uri = Uri.parse('$baseUrl$endpoint');
+    if (queryParams != null && queryParams.isNotEmpty) {
+      return uri
+          .replace(
+              queryParameters:
+                  queryParams.map((k, v) => MapEntry(k, v.toString())))
+          .toString();
+    }
+    return uri.toString();
+  }
+
+  /// Lấy top truyện theo lượt xem trong khoảng thời gian
+  /// [period] - khoảng thời gian ('day', 'week', 'month', 'all')
+  /// [limit] - số lượng truyện muốn lấy (mặc định 10)
+  static Future<Map<String, dynamic>?> getTopViewedComics({
+    String period = 'week',
+    int limit = 10,
+  }) async {
+    try {
+      final url = _buildUrlWithParams('/top-viewed', {
+        'period': period,
+        'limit': limit,
+      });
+      final response = await _safeApiCall(url);
+      _logResponse('/top-viewed', response);
+      return _processResponse(response);
+    } catch (e) {
+      print('Lỗi khi lấy top truyện theo lượt xem: $e');
+      return null;
+    }
   }
 }

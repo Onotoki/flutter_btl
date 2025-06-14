@@ -75,27 +75,32 @@ class _SelectableTextWidgetState extends State<SelectableTextWidget> {
 
   /// Xử lý sự kiện thay đổi lựa chọn văn bản
   /// Quản lý trạng thái kéo và debounce cho hiệu suất tốt hơn
+  /// Xử lý sự kiện thay đổi lựa chọn văn bản
+  /// Quản lý trạng thái kéo và debounce cho hiệu suất tốt hơn
   void _handleSelectionChanged(
       TextSelection? selection, SelectionChangedCause? cause) {
-    // Hủy timer trước đó
+    // Hủy timer trước đó để tránh xung đột
     _selectionDebounceTimer?.cancel();
 
     // Thiết lập trạng thái kéo dựa trên nguyên nhân
     _isDragging = cause == SelectionChangedCause.drag;
 
     if (selection != null && !selection.isCollapsed) {
+      // Cập nhật vị trí bắt đầu và kết thúc của lựa chọn
       _selectionStart = selection.start;
       _selectionEnd = selection.end;
+      // Lưu văn bản được chọn
       _selectedText = widget.text.substring(selection.start, selection.end);
       _isSelectionActive = true;
 
-      // Debounce thông báo thay đổi lựa chọn
+      // Debounce thông báo thay đổi lựa chọn để cải thiện hiệu suất
       _selectionDebounceTimer = Timer(const Duration(milliseconds: 100), () {
         if (mounted) {
           widget.onTextSelectionChanged?.call(true);
         }
       });
     } else {
+      // Đặt lại trạng thái khi không còn lựa chọn
       _selectionStart = -1;
       _selectionEnd = -1;
       _selectedText = null;
@@ -109,25 +114,30 @@ class _SelectableTextWidgetState extends State<SelectableTextWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Tạo widget SelectableText với khả năng chọn văn bản và hiển thị các highlight
     return SelectableText.rich(
-      _buildTextWithHighlights(),
-      style: widget.style,
-      onSelectionChanged: _handleSelectionChanged,
+      _buildTextWithHighlights(), // Xây dựng văn bản với các highlight
+      style: widget.style, // Áp dụng kiểu dáng cho văn bản
+      onSelectionChanged: _handleSelectionChanged, // Xử lý sự thay đổi lựa chọn
       // Cải thiện hành vi chọn text cho văn bản nhiều dòng
-      scrollPhysics: const ClampingScrollPhysics(),
-      textAlign: TextAlign.justify,
+      scrollPhysics: const ClampingScrollPhysics(), // Thiết lập vật lý cuộn
+      textAlign: TextAlign.justify, // Căn chỉnh văn bản
       contextMenuBuilder: (context, editableTextState) {
         // Luôn kiểm tra lựa chọn hợp lệ, ngay cả trong thao tác kéo
         final hasValidSelection = _selectedText != null &&
-            _selectedText!.isNotEmpty &&
-            _selectionStart != -1 &&
-            _selectionEnd != -1 &&
-            _isSelectionActive;
+            _selectedText!
+                .isNotEmpty && // Kiểm tra xem có văn bản được chọn không
+            _selectionStart != -1 && // Kiểm tra vị trí bắt đầu
+            _selectionEnd != -1 && // Kiểm tra vị trí kết thúc
+            _isSelectionActive; // Kiểm tra trạng thái chọn
 
+        // Nếu có lựa chọn hợp lệ, hiển thị menu ngữ cảnh
         if (hasValidSelection) {
-          return _buildCompactContextMenu(context, editableTextState);
+          return _buildCompactContextMenu(
+              context, editableTextState); // Xây dựng menu ngữ cảnh
         }
-        return const SizedBox.shrink();
+        return const SizedBox
+            .shrink(); // Trả về widget rỗng nếu không có lựa chọn hợp lệ
       },
     );
   }
@@ -460,7 +470,7 @@ class _SelectableTextWidgetState extends State<SelectableTextWidget> {
       FocusScope.of(context).unfocus();
     });
 
-    // Hiển thị bộ chọn màu dưới dạng bottom sheet thay vì dialog đầy đủ
+    // Hiển thị bộ chọn màu dưới dạng bottom sheet
     Future.microtask(() {
       if (mounted) {
         showModalBottomSheet(

@@ -252,8 +252,8 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     //Hàm tính kích thước ảnh responsive theo màn hình
     Size _getResponsiveSize(BuildContext context) {
       final screenWidth = MediaQuery.of(context).size.width;
-      final width = (screenWidth - 40) / 3; // trừ padding + khoảng cách
-      final height = width * 4 / 3;
+      final width = (screenWidth - 40) / 2.5; // trừ padding + khoảng cách
+      final height = width * 4 / 2.5;
       return Size(width, height);
     }
 

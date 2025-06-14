@@ -1,14 +1,17 @@
+// Lớp mô hình dữ liệu đại diện cho một highlight (đánh dấu) trong sách EPUB
 class EpubHighlight {
-  final String id;
-  final String bookId;
-  final String content;
-  final int pageNumber;
-  final String pageId;
-  final String rangy;
-  final String note;
-  final String color;
-  final DateTime createdAt;
+  // Các thuộc tính của highlight
+  final String id; // ID duy nhất của highlight
+  final String bookId; // ID của sách chứa highlight
+  final String content; // Nội dung văn bản được đánh dấu
+  final int pageNumber; // Số trang chứa highlight
+  final String pageId; // ID của trang chứa highlight
+  final String rangy; // Thông tin vị trí highlight (sử dụng thư viện Rangy)
+  final String note; // Ghi chú của người dùng cho highlight
+  final String color; // Màu sắc của highlight
+  final DateTime createdAt; // Thời gian tạo highlight
 
+  // Constructor khởi tạo đối tượng EpubHighlight
   EpubHighlight({
     required this.id,
     required this.bookId,
@@ -21,6 +24,7 @@ class EpubHighlight {
     required this.createdAt,
   });
 
+  // Chuyển đổi đối tượng EpubHighlight thành Map để lưu trữ hoặc truyền dữ liệu
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -35,6 +39,7 @@ class EpubHighlight {
     };
   }
 
+  // Factory method tạo EpubHighlight từ dữ liệu JSON
   factory EpubHighlight.fromJson(Map<String, dynamic> json) {
     return EpubHighlight(
       id: json['id'],

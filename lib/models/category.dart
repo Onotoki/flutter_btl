@@ -1,10 +1,13 @@
+// Lớp đại diện cho thể loại truyện
 class Category {
+  // Các thuộc tính của thể loại
   final String id;
   final String name;
   final String description;
-  final int stories;
-  final String slug;
+  final int stories; // Số lượng truyện trong thể loại
+  final String slug; // Đường dẫn URL thân thiện
 
+  // Hàm khởi tạo với các tham số bắt buộc
   Category({
     required this.id,
     required this.name,
@@ -13,9 +16,10 @@ class Category {
     required this.slug,
   });
 
+  // Phương thức tạo đối tượng Category từ dữ liệu JSON
   factory Category.fromJson(Map<String, dynamic> json) {
     // In ra cấu trúc JSON để debug
-    print('Parsing Category from JSON: ${json.keys.toList()}');
+    print('Đang phân tích Category từ JSON: ${json.keys.toList()}');
 
     return Category(
       id: json['id'] ?? '',
@@ -26,6 +30,7 @@ class Category {
     );
   }
 
+  // Hàm hỗ trợ để phân tích số lượng truyện từ các định dạng JSON khác nhau
   static int _parseStories(Map<String, dynamic> json) {
     // Thử nhiều cách để lấy số truyện
     if (json.containsKey('stories') && json['stories'] != null) {
@@ -54,6 +59,7 @@ class Category {
   static List<Category> parseCategories(Map<String, dynamic> apiResponse) {
     List<Category> categories = [];
 
+    // Kiểm tra và trích xuất dữ liệu từ response API
     if (apiResponse.containsKey('items')) {
       List<dynamic> categoriesData = apiResponse['items'];
       for (var categoryData in categoriesData) {
