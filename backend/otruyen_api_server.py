@@ -1,6 +1,6 @@
 """
 OTruyen API Server với tích hợp Firebase
-Tham khảo triển khai các API endpoints của OTruyen, lấy dữ liệu từ Firebase Realtime Database.
+Triển khai các API endpoints của OTruyen, lấy dữ liệu từ Firebase Realtime Database.
 Máy chủ API cho ứng dụng đọc truyện tranh và ebook trực tuyến.
 """
 
@@ -249,23 +249,23 @@ def get_home():
 @app.route('/v1/api/danh-sach/<string:type_slug>')
 def get_comic_list(type_slug):
     """
-    Get item list by type/status.
-    'truyen-moi' -> latest comics (itemType: comic)
-    'hoan-thanh' -> completed comics/ebooks
-    'ebook-moi' -> latest ebooks (itemType: ebook)
-    'dang-phat-hanh' -> ongoing comics/ebooks
+    Lấy danh sách mục theo loại/trạng thái.
+    'truyen-moi' -> truyện mới nhất (itemType: comic)
+    'hoan-thanh' -> truyện/ebook đã hoàn thành
+    'ebook-moi' -> ebook mới nhất (itemType: ebook)
+    'dang-phat-hanh' -> truyện/ebook đang phát hành
     """
     page = request.args.get('page', 1, type=int)
     per_page = config.DEFAULT_ITEMS_PER_PAGE
 
-    query = FB_DB.order_by_child("updatedAt") # Requires .indexOn in Firebase rules for "updatedAt"
+    query = FB_DB.order_by_child("updatedAt") # Cần .indexOn trong quy tắc Firebase cho "updatedAt"
 
     all_items_raw = query.get()
     all_items = []
 
     if isinstance(all_items_raw, dict):
-        # Sort by updatedAt timestamp in descending order (newest first)
-        # Firebase returns dict, convert to list of tuples and sort
+        # Sắp xếp theo timestamp updatedAt theo thứ tự giảm dần (mới nhất trước)
+        # Firebase trả về dict, chuyển đổi thành danh sách các tuple và sắp xếp
         sorted_items_tuples = sorted(all_items_raw.items(), key=lambda item: item[1].get("updatedAt", ""), reverse=True)
 
         for key, value in sorted_items_tuples:
@@ -278,14 +278,14 @@ def get_comic_list(type_slug):
 
             match = False
             if type_slug == "truyen-moi" and formatted_item.get("itemType") == "comic":
-                match = True # Assuming "truyen-moi" are latest comics
+                match = True # Giả định "truyen-moi" là truyện mới nhất
             elif type_slug == "ebook-moi" and formatted_item.get("itemType") == "ebook":
                 match = True
             elif type_slug == "hoan-thanh" and formatted_item.get("status") == "completed":
                 match = True
             elif type_slug == "dang-phat-hanh" and formatted_item.get("status") == "ongoing":
                 match = True
-            elif type_slug == "sap-ra-mat": # 'coming_soon' status
+            elif type_slug == "sap-ra-mat": # trạng thái 'coming_soon'
                  if formatted_item.get("status") == "coming_soon":
                     match = True
             
@@ -321,19 +321,19 @@ def get_comic_list(type_slug):
 @app.route('/v1/api/the-loai')
 def get_categories():
     """
-    Get list of unique comic categories from all items in Firebase.
-    This can be slow on large datasets without pre-aggregation.
+    # Lấy danh sách các thể loại truyện tranh độc nhất từ tất cả các mục trong Firebase.
+    # Điều này có thể chậm trên các tập dữ liệu lớn nếu không có sự tổng hợp trước.
     """
-    all_items_raw = FB_DB.order_by_key().get() # Get all items
+    all_items_raw = FB_DB.order_by_key().get() # Lấy tất cả các mục
     
-    categories = {} # Use a dict to store unique categories by slug
+    categories = {} # Sử dụng một dict để lưu trữ các thể loại độc nhất theo slug
     if isinstance(all_items_raw, dict):
         for key, value in all_items_raw.items():
             if isinstance(value, dict) and "category" in value and isinstance(value["category"], list):
                 for cat_info in value["category"]:
                     if isinstance(cat_info, dict) and "slug" in cat_info and "name" in cat_info:
                         categories[cat_info["slug"]] = {
-                            "_id": cat_info.get("id", cat_info["slug"]), # Use 'id' if present, else slug
+                            "_id": cat_info.get("id", cat_info["slug"]), # Sử dụng 'id' nếu có, nếu không thì sử dụng slug
                             "slug": cat_info["slug"],
                             "name": cat_info["name"]
                         }
@@ -346,19 +346,19 @@ def get_categories():
 
 @app.route('/v1/api/the-loai/<string:slug>')
 def get_category_comics(slug):
-    """Get items by category slug."""
+    """Lấy các mục theo slug thể loại."""
     page = request.args.get('page', 1, type=int)
     per_page = config.DEFAULT_ITEMS_PER_PAGE
 
-    # Firebase RTDB doesn't directly support querying array_contains for categories.
-    # We need to fetch all items and filter in the application.
-    # This is NOT performant for large datasets.
-    # For better performance, you'd typically denormalize data or use a search service.
+    # Firebase RTDB không hỗ trợ trực tiếp việc truy vấn array_contains cho các thể loại.
+    # Chúng ta cần lấy tất cả các mục và lọc trong ứng dụng.
+    # Điều này không hiệu quả cho các tập dữ liệu lớn.
+    # Để có hiệu suất tốt hơn, bạn thường sẽ chuẩn hóa dữ liệu hoặc sử dụng dịch vụ tìm kiếm.
     
-    all_items_raw = FB_DB.order_by_key().get() # Get all items
+    all_items_raw = FB_DB.order_by_key().get() # Lấy tất cả các mục
     filtered_items = []
 
-    category_name = slug.replace("-", " ").title() # For display
+    category_name = slug.replace("-", " ").title() # Để hiển thị
 
     if isinstance(all_items_raw, dict):
         for key, value in all_items_raw.items():
@@ -368,11 +368,10 @@ def get_category_comics(slug):
                         formatted = format_item_for_response((key, value))
                         if formatted:
                             filtered_items.append(formatted)
-                        break # Found in this item's categories
+                        break # Đã tìm thấy trong các thể loại của mục này
     
-    # Sort results (e.g., by updatedAt, default by key implicitly)
+    # Sắp xếp kết quả (ví dụ: theo updatedAt, mặc định theo key ngầm định)
     filtered_items.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
-
 
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
@@ -402,45 +401,43 @@ def get_category_comics(slug):
 @app.route('/v1/api/truyen-tranh/<string:slug_or_id>')
 def get_comic_details(slug_or_id):
     """
-    Get item details by its slug or Firebase key (_id).
-    Firebase keys for comics are like "comic_{slug}" and for ebooks "ebook_{slug}".
+    Lấy chi tiết mục theo slug hoặc khóa Firebase (_id).
+    Các khóa Firebase cho truyện tranh có dạng "comic_{slug}" và cho sách điện tử "ebook_{slug}".
     """
-    # Try fetching by direct key first (if _id is passed)
+    # Thử lấy dữ liệu bằng khóa trực tiếp trước (nếu _id được truyền vào)
     item_data = FB_DB.child(slug_or_id).get()
 
     if not item_data or not isinstance(item_data, dict):
-        # If not found by direct key, try to find by slug.
-        # This requires iterating or specific indexing if not using prefixed keys.
-        # Assuming keys are "comic_SLUG" or "ebook_SLUG"
+        # Nếu không tìm thấy bằng khóa trực tiếp, thử tìm theo slug.
+        # Điều này yêu cầu phải lặp qua hoặc chỉ mục cụ thể nếu không sử dụng khóa tiền tố.
+        # Giả sử các khóa là "comic_SLUG" hoặc "ebook_SLUG"
         possible_keys = [f"comic_{slug_or_id}", f"ebook_{slug_or_id}"]
         for p_key in possible_keys:
             item_data = FB_DB.child(p_key).get()
             if item_data and isinstance(item_data, dict):
-                break # Found
+                break # Đã tìm thấy
     
     if not item_data or not isinstance(item_data, dict):
         return jsonify({"status": "error", "message": "Truyện không tìm thấy"}), 404
 
-    # Use the key it was found with if _id is not in the data
-    # This part is a bit tricky as we don't know which key was successful if iterating
-    # Best if slug_or_id is the actual Firebase key.
-    # For simplicity, we assume item_data now holds the correct data.
+    # Sử dụng khóa mà nó đã được tìm thấy nếu _id không có trong dữ liệu
+    # Phần này hơi phức tạp vì ta không biết khóa nào đã thành công nếu lặp qua
+    # Tốt nhất nếu slug_or_id là khóa Firebase thực tế.
+    # Để đơn giản, ta giả định item_data bây giờ chứa dữ liệu chính xác.
     
-    # If item_data's key isn't slug_or_id, it means we found it via a prefixed key.
-    # We need the original key for format_item_for_response if _id isn't in item_data.
-    # This logic is simplified; a robust solution would pass the actual Firebase key.
+    # Nếu khóa của item_data không phải là slug_or_id, điều đó có nghĩa là ta đã tìm thấy nó qua khóa tiền tố.
+    # ta cần khóa gốc cho format_item_for_response nếu _id không có trong item_data.
     
-    # For now, if _id is missing in item_data, we can't reliably determine the key here
-    # unless slug_or_id *was* the key.
-    # This assumes format_item_for_response can handle item_data without a key tuple.
-    # Let's try to reconstruct a semblence of the key for format_item_for_response
-    # This is a placeholder for a more robust key retrieval if slug_or_id is not the key.
+    # Hiện tại, nếu _id bị thiếu trong item_data, ta không thể xác định
+    # trừ khi slug_or_id là khóa.
+    # Điều này giả định format_item_for_response có thể xử lý item_data mà không cần một bộ khóa.
+    # Hãy thử tái tạo một dạng khóa cho format_item_for_response
     
-    effective_key = slug_or_id # Assume slug_or_id might be the key.
-    if '_id' not in item_data: # If the item itself doesn't have an _id field
-         # Try to determine key if found by slug
+    effective_key = slug_or_id # Giả định slug_or_id có thể là khóa.
+    if '_id' not in item_data: # Nếu mục đó không có trường _id
+         # Thử xác định khóa nếu tìm thấy theo slug
         prefix = "comic_" if item_data.get("itemType") == "comic" else "ebook_"
-        if slug_or_id == item_data.get("slug"): # if slug_or_id was indeed a slug
+        if slug_or_id == item_data.get("slug"): # nếu slug_or_id thực sự là một slug
              effective_key = prefix + slug_or_id
 
     formatted_item = format_item_for_response((effective_key, item_data))
@@ -461,17 +458,17 @@ def get_comic_details(slug_or_id):
 @app.route('/v1/api/tim-kiem')
 def search_comics():
     """
-    Search items by keyword in name or origin_name.
-    This is a basic client-side-like search by fetching all and filtering.
-    NOT performant for large Firebase RTDB datasets.
-    Requires indexing on Firebase or a dedicated search solution for performance.
+    Tìm kiếm các mục theo từ khóa trong tên hoặc origin_name.
+    Đây là một tìm kiếm cơ bản giống như phía khách hàng bằng cách lấy tất cả và lọc.
+    KHÔNG hiệu quả cho các tập dữ liệu lớn của Firebase RTDB.
+    Cần có chỉ mục trên Firebase hoặc một giải pháp tìm kiếm chuyên dụng để đạt hiệu suất.
     """
     keyword = request.args.get('keyword', '').lower()
     page = request.args.get('page', 1, type=int)
     per_page = config.DEFAULT_ITEMS_PER_PAGE
 
     if not keyword:
-        return jsonify({"status": "error", "message": "Keyword parameter is required"}), 400
+        return jsonify({"status": "error", "message": "Tham số từ khóa là bắt buộc"}), 400
 
     all_items_raw = FB_DB.order_by_key().get()
     search_results = []
@@ -486,13 +483,13 @@ def search_comics():
                 else:
                     origin_names = ""
                 
-                # Simple search
+                # Tìm kiếm đơn giản
                 if keyword in name or keyword in origin_names:
                     formatted = format_item_for_response((key,value))
                     if formatted:
                         search_results.append(formatted)
     
-    # Sort results (e.g., by relevance if implemented, or name)
+    # Sắp xếp kết quả (ví dụ: theo độ liên quan nếu đã được triển khai, hoặc theo tên)
     search_results.sort(key=lambda x: x.get("name", ""))
 
 
@@ -523,25 +520,25 @@ def search_comics():
 @app.route('/v1/api/truyen-chu/<string:slug_or_id>')
 def get_text_story_content(slug_or_id):
     """
-    Get text story content by its slug or Firebase key (_id).
-    Returns both metadata and content chapters.
+    Lấy nội dung truyện chữ theo slug hoặc khóa Firebase (_id).
+    Trả về cả metadata và các chương nội dung.
     """
-    # Try fetching by direct key first (if _id is passed)
+    # Thử lấy dữ liệu bằng khóa trực tiếp trước (nếu _id được truyền vào)
     item_data = FB_DB.child(slug_or_id).get()
 
     if not item_data or not isinstance(item_data, dict):
-        # If not found by direct key, try to find by slug.
+        # Nếu không tìm thấy bằng khóa trực tiếp, thử tìm bằng slug.
         possible_keys = [f"ebook_{slug_or_id}", f"text_story_{slug_or_id}"]
         for p_key in possible_keys:
             item_data = FB_DB.child(p_key).get()
             if item_data and isinstance(item_data, dict):
-                slug_or_id = p_key  # Update to use the found key
-                break # Found
+                slug_or_id = p_key  # Cập nhật để sử dụng khóa đã tìm thấy
+                break  # Đã tìm thấy
     
     if not item_data or not isinstance(item_data, dict):
         return jsonify({"status": "error", "message": "Truyện chữ không tìm thấy"}), 404
 
-    # Check if this is actually a text-based story
+    # Kiểm tra xem đây có thực sự là một truyện chữ không
     if item_data.get("itemType") not in ["ebook", "text_story"]:
         return jsonify({"status": "error", "message": "Đây không phải là truyện chữ"}), 400
 
@@ -570,39 +567,39 @@ def get_text_story_content(slug_or_id):
                 print(f"\n=== Xử lý EPUB cho {book_slug} ===")
                 # Đọc TOC từ EPUB
                 epub_chapters = get_epub_table_of_contents(str(epub_file_path))
-                print(f"Đã nhận {len(epub_chapters)} chapters từ TOC")
+                print(f"Đã nhận {len(epub_chapters)} chương từ TOC")
                 
-                # Chuyển đổi sang format tương thích với client
+                # Chuyển đổi sang định dạng tương thích với client
                 chapters_data = []
-                chapter_counter = 1  # Đếm chapters thực sự
+                chapter_counter = 1  # Đếm số chương thực sự
                 
                 for i, chapter in enumerate(epub_chapters):
-                    print(f"  Converting chapter {i+1}: {chapter}")
+                    print(f"  Chuyển đổi chương {i+1}: {chapter}")
                     
-                    # Lọc bỏ các chapters không phải nội dung chính
+                    # Lọc bỏ các chương không phải nội dung chính
                     title_lower = chapter['title'].lower()
                     href_lower = chapter['href'].lower()
                     
-                    # Bỏ qua các chapters không phải nội dung chính
+                    # Bỏ qua các chương không phải nội dung chính
                     if any(skip_word in title_lower for skip_word in ['mục lục', 'toc', 'chào mừng', 'welcome', 'giới thiệu', 'introduction']):
-                        print(f"    Skipping non-content chapter: {chapter['title']}")
+                        print(f"    Bỏ qua chương không phải nội dung: {chapter['title']}")
                         continue
                     if any(skip_word in href_lower for skip_word in ['toc.html', 'welcome.html', 'intro.html']):
-                        print(f"    Skipping non-content href: {chapter['href']}")
+                        print(f"    Bỏ qua href không phải nội dung: {chapter['href']}")
                         continue
                     
-                    # Tạo chapter data với số thứ tự thực tế
+                    # Tạo dữ liệu chương với số thứ tự thực tế
                     chapter_data = {
-                        "filename": f"Chapter {chapter_counter}",
+                        "filename": f"Chương {chapter_counter}",
                         "chapter_name": str(chapter_counter),  # Sử dụng counter thay vì order
                         "chapter_title": chapter['title'],
                         "chapter_api_data": f"/v1/api/truyen-chu/{book_slug}/chuong/{chapter['order']}"  # Vẫn sử dụng order gốc cho API
                     }
                     chapters_data.append(chapter_data)
-                    print(f"    Result: {chapter_data}")
+                    print(f"    Kết quả: {chapter_data}")
                     chapter_counter += 1
                 
-                print(f"Tạo được {len(chapters_data)} chapter data entries")
+                print(f"Tạo được {len(chapters_data)} mục dữ liệu chương")
                 
                 content_data = {
                     "chapters": [{
@@ -619,13 +616,13 @@ def get_text_story_content(slug_or_id):
                     }
                 }
                 
-                print(f"Final content_data structure:")
+                print(f"Cấu trúc content_data cuối cùng:")
                 print(f"  - totalChapters: {content_data['totalChapters']}")
-                print(f"  - chapters[0]['server_data'] length: {len(content_data['chapters'][0]['server_data'])}")
+                print(f"  - độ dài chapters[0]['server_data']: {len(content_data['chapters'][0]['server_data'])}")
                 print(f"=== Kết thúc xử lý EPUB ===\n")
             except Exception as e:
                 print(f"Lỗi đọc EPUB TOC: {e}")
-                # Fallback về dữ liệu cũ nếu có lỗi
+                # Quay lại dữ liệu cũ nếu có lỗi
                 content_data = {
                     "chapters": formatted_item.get("chapters", []),
                     "content": formatted_item.get("content", ""),
@@ -1044,15 +1041,15 @@ def get_epub_table_of_contents(epub_file_path):
         book = epub.read_epub(epub_file_path)
         chapters = []
         
-        # Debug thông tin EPUB
-        print(f"EPUB metadata:")
-        print(f"  - Title: {book.get_metadata('DC', 'title')}")
-        print(f"  - TOC structure type: {type(book.toc)}")
-        print(f"  - TOC length: {len(book.toc) if hasattr(book.toc, '__len__') else 'Unknown'}")
+        # Gỡ lỗi thông tin EPUB
+        print(f"Thông tin metadata EPUB:")
+        print(f"  - Tiêu đề: {book.get_metadata('DC', 'title')}")
+        print(f"  - Loại cấu trúc TOC: {type(book.toc)}")
+        print(f"  - Độ dài TOC: {len(book.toc) if hasattr(book.toc, '__len__') else 'Không xác định'}")
         
         # Lấy TOC từ EPUB
         for i, item in enumerate(book.toc):
-            print(f"  TOC item {i}: {type(item)} - {item}")
+            print(f"  Mục TOC {i}: {type(item)} - {item}")
             if hasattr(item, 'title') and hasattr(item, 'href'):
                 chapter_info = {
                     'title': item.title,
@@ -1060,23 +1057,23 @@ def get_epub_table_of_contents(epub_file_path):
                     'order': i + 1
                 }
                 chapters.append(chapter_info)
-                print(f"    Added chapter: {chapter_info}")
+                print(f"    Đã thêm chương: {chapter_info}")
             else:
-                print(f"    Skipped item (no title/href): {item}")
+                print(f"    Bỏ qua mục (không có title/href): {item}")
         
-        print(f"Found {len(chapters)} chapters from TOC")
+        print(f"Đã tìm thấy {len(chapters)} chương từ TOC")
         
         # Nếu không có TOC, thử lấy từ spine (thứ tự đọc)
         if not chapters:
-            print("No TOC found, trying spine...")
-            print(f"Spine length: {len(book.spine)}")
+            print("Không tìm thấy TOC, thử từ spine...")
+            print(f"Độ dài spine: {len(book.spine)}")
             
             for i, item_id in enumerate(book.spine):
-                print(f"  Spine item {i}: {item_id}")
-                item = book.get_item_with_id(item_id[0])  # spine items are tuples
+                print(f"  Mục spine {i}: {item_id}")
+                item = book.get_item_with_id(item_id[0])  # các mục spine là tuples
                 if item and hasattr(item, 'get_name'):
                     item_name = item.get_name()
-                    # Tạo title từ filename
+                    # Tạo tiêu đề từ filename
                     title = os.path.splitext(os.path.basename(item_name))[0].replace('_', ' ').title()
                     chapter_info = {
                         'title': title,
@@ -1084,11 +1081,11 @@ def get_epub_table_of_contents(epub_file_path):
                         'order': i + 1
                     }
                     chapters.append(chapter_info)
-                    print(f"    Added spine chapter: {chapter_info}")
+                    print(f"    Đã thêm chương spine: {chapter_info}")
                 else:
-                    print(f"    Skipped spine item: {item}")
+                    print(f"    Bỏ qua mục spine: {item}")
         
-        print(f"=== Total chapters found: {len(chapters)} ===\n")
+        print(f"=== Tổng số chương tìm thấy: {len(chapters)} ===\n")
         return chapters
     except Exception as e:
         print(f"Lỗi lấy TOC từ {epub_file_path}: {e}")
