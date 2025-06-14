@@ -40,8 +40,10 @@ class _TranslatePopupState extends State<TranslatePopup> {
 
     // Cấu hình WebView
     _controller = WebViewController()
+      //Bật JavaScript để trang web hoạt động đúng
       ..setJavaScriptMode(
           JavaScriptMode.unrestricted) // Cho phép chạy JavaScript
+      //Quản lý các sự kiện khi điều hướng/truy cập trang web
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
